@@ -11,7 +11,6 @@
 #include "panima/types.hpp"
 #include <mathutil/transform.hpp>
 
-class Skeleton;
 namespace panima
 {
 	class Pose
@@ -36,6 +35,9 @@ namespace panima
 		void Clear();
 		void Lerp(const Pose &other,float f);
 		operator bool() const {return !m_transforms.empty();}
+
+		void Localize(const panima::Skeleton &skeleton);
+		void Globalize(const panima::Skeleton &skeleton);
 
 		std::vector<uint32_t> &GetBoneTranslationTable() {return m_boneIdToChannelId;}
 		const std::vector<uint32_t> &GetBoneTranslationTable() const {return const_cast<Pose*>(this)->GetBoneTranslationTable();}

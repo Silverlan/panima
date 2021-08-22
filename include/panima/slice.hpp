@@ -12,7 +12,6 @@
 #include <iostream>
 #include <udm_types.hpp>
 
-class Skeleton;
 namespace panima
 {
 	struct Slice

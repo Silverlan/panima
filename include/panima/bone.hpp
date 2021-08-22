@@ -136,6 +136,6 @@ namespace panima
 	};
 };
 
-std::ostream &operator<<(std::ostream &out,const panima::Channel &o);
+std::ostream &operator<<(std::ostream &out,const panima::Bone &o);
 
 #endif

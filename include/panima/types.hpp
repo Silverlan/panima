@@ -14,6 +14,8 @@
 
 namespace panima
 {
+	using AnimationId = uint32_t;
+	constexpr auto INVALID_ANIMATION = std::numeric_limits<AnimationId>::max();
 	using AnimationChannelId = uint16_t;
 	class Animation;
 	class Channel;
@@ -22,6 +24,10 @@ namespace panima
 	class Pose;
 	struct Slice;
 	using BoneId = uint16_t;
+	struct Bone;
+	class Skeleton;
+
+	using PPlayer = std::shared_ptr<Player>;
 };
 
 #endif

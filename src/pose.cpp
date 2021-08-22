@@ -6,6 +6,8 @@
  */
 
 #include "panima/pose.hpp"
+#include "panima/skeleton.hpp"
+#include "panima/bone.hpp"
 #include <functional>
 
 panima::Pose::Pose(const std::vector<umath::ScaledTransform> &transforms)
@@ -58,6 +60,71 @@ void panima::Pose::Lerp(const Pose &other,float f)
 			continue;
 		m_transforms[channel0].Interpolate(other.m_transforms[channel1],f);
 	}
+}
+static void get_global_bone_transforms(const panima::Skeleton &skeleton,panima::Pose &frame)
+{
+	std::function<void(panima::Pose&,const std::unordered_map<uint32_t,std::shared_ptr<panima::Bone>>&,const Vector3&,const Quat&)> fGetGlobalBoneTransforms;
+	fGetGlobalBoneTransforms = [&fGetGlobalBoneTransforms](panima::Pose &frame,const std::unordered_map<uint32_t,std::shared_ptr<panima::Bone>> &bones,const Vector3 &posParent,const Quat &rotParent) {
+		for(auto &pair : bones)
+		{
+			auto &bone = pair.second;
+			assert(bone->ID == pair.first);
+			auto *pose = frame.GetTransform(pair.first);
+			if(pose)
+			{
+				auto &pos = pose->GetOrigin();
+				auto &rot = pose->GetRotation();
+				uvec::rotate(&pos,rotParent);
+				pos += posParent;
+				rot = rotParent *rot;
+			}
+
+			fGetGlobalBoneTransforms(frame,bone->children,pose ? pose->GetOrigin() : Vector3{},pose ? pose->GetRotation() : uquat::identity());
+		}
+	};
+	fGetGlobalBoneTransforms(frame,skeleton.GetRootBones(),{},uquat::identity());
+}
+static void get_local_bone_transforms(const panima::Skeleton &skeleton,panima::Pose &frame)
+{
+	std::function<void(panima::Pose&,const std::unordered_map<uint32_t,std::shared_ptr<panima::Bone>>&)> fGetLocalBoneTransforms;
+	fGetLocalBoneTransforms = [&fGetLocalBoneTransforms](panima::Pose &frame,const std::unordered_map<uint32_t,std::shared_ptr<panima::Bone>> &bones) {
+		for(auto it=bones.begin();it!=bones.end();++it)
+		{
+			auto &bone = it->second;
+			fGetLocalBoneTransforms(frame,bone->children);
+
+			auto parent = bone->parent.lock();
+			if(parent != nullptr)
+			{
+				auto idx = it->first;
+				auto parentIdx = parent->ID;
+
+				auto *pose = frame.GetTransform(idx);
+				if(pose)
+				{
+					auto &pos = pose->GetOrigin();
+					auto &rot = pose->GetRotation();
+					auto *poseParent = frame.GetTransform(parentIdx);
+					if(poseParent)
+					{
+						pos -= poseParent->GetOrigin();
+						auto inv = uquat::get_inverse(poseParent->GetRotation());
+						uvec::rotate(&pos,inv);
+						rot = inv *rot;
+					}
+				}
+			}
+		}
+	};
+	fGetLocalBoneTransforms(frame,skeleton.GetRootBones());
+}
+void panima::Pose::Localize(const panima::Skeleton &skeleton)
+{
+	get_local_bone_transforms(skeleton,*this);
+}
+void panima::Pose::Globalize(const panima::Skeleton &skeleton)
+{
+	get_global_bone_transforms(skeleton,*this);
 }
 
 std::ostream &operator<<(std::ostream &out,const panima::Pose &o)
