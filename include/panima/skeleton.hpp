@@ -35,8 +35,8 @@ namespace panima
 		std::unordered_map<uint32_t,std::shared_ptr<Bone>> &GetRootBones();
 		const std::vector<std::shared_ptr<Bone>> &GetBones() const;
 		std::vector<std::shared_ptr<Bone>> &GetBones();
-		std::vector<umath::ScaledTransform> &GetBonePoses() {return const_cast<Skeleton*>(this)->GetBonePoses();}
-		const std::vector<umath::ScaledTransform> &GetBonePoses() const {return m_referencePoses;}
+		std::vector<umath::ScaledTransform> &GetBonePoses() {return m_referencePoses;}
+		const std::vector<umath::ScaledTransform> &GetBonePoses() const {return const_cast<Skeleton*>(this)->GetBonePoses();}
 
 		void Merge(Skeleton &other);
 		bool Save(udm::AssetDataArg outData,std::string &outErr);

@@ -169,7 +169,7 @@ bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data,std::string 
 		auto &bone = bones[boneInfo.index];
 		bone->name = boneInfo.name;
 
-		auto &pose = m_referencePoses[i];
+		auto &pose = m_referencePoses[boneInfo.index];
 		boneInfo.udmBone["pose"](pose);
 
 		bone->children.reserve(boneInfo.childIds.size());
