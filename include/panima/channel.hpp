@@ -20,6 +20,7 @@ namespace panima
 		Step,
 		CubicSpline
 	};
+	struct ValueExpression;
 	struct Channel
 		: public std::enable_shared_from_this<Channel>
 	{
@@ -60,6 +61,7 @@ namespace panima
 		Channel(Channel &&other)=default;
 		Channel &operator=(const Channel&)=default;
 		Channel &operator=(Channel&&)=default;
+		~Channel();
 		ChannelInterpolation interpolation = ChannelInterpolation::Linear;
 		util::Path targetPath;
 
@@ -109,6 +111,10 @@ namespace panima
 		template<typename T,bool ENABLE_VALIDATION=true>
 			T GetInterpolatedValue(float t,void(*interpFunc)(const void*,const void*,double,void*)) const;
 
+		bool ApplyValueExpression(double time,double &inOutVal) const;
+		bool SetValueExpression(std::string expression,std::string &outErr);
+		const std::string *GetValueExpression() const;
+
 		void Resize(uint32_t numValues);
 		uint32_t GetSize() const;
 	private:
@@ -116,6 +122,7 @@ namespace panima
 		std::pair<uint32_t,uint32_t> FindInterpolationIndices(float t,float &outInterpFactor,uint32_t pivotIndex,uint32_t recursionDepth) const;
 		udm::PProperty m_times = nullptr;
 		udm::PProperty m_values = nullptr;
+		std::unique_ptr<ValueExpression> m_valueExpression = nullptr;
 	};
 };
 

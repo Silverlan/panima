@@ -56,6 +56,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(ENABLE_STATIC_LIBRARY_FLAG 0)
 # set(PRECOMPILED_HEADER "stdafx")
 
+add_include_dir(muparserx)
 add_include_dir(sharedutils)
 add_include_dir(mathutil)
 add_include_dir(vfilesystem)
