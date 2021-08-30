@@ -85,27 +85,27 @@ bool panima::ValueExpression::Initialize(std::string &outErr)
 	);
 	p.DefineFun(
 		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::rad_to_deg(umath::sin(umath::deg_to_rad(a_pArg[0]->GetFloat())));
+			*ret = umath::sin(umath::deg_to_rad(a_pArg[0]->GetFloat()));
 		}>{"sin",1}
 	);
 	p.DefineFun(
 		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::rad_to_deg(umath::asin(umath::deg_to_rad(a_pArg[0]->GetFloat())));
+			*ret = umath::asin(umath::deg_to_rad(a_pArg[0]->GetFloat()));
 		}>{"asin",1}
 	);
 	p.DefineFun(
 		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::rad_to_deg(umath::cos(umath::deg_to_rad(a_pArg[0]->GetFloat())));
+			*ret = umath::cos(umath::deg_to_rad(a_pArg[0]->GetFloat()));
 		}>{"cos",1}
 	);
 	p.DefineFun(
 		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::rad_to_deg(umath::acos(umath::deg_to_rad(a_pArg[0]->GetFloat())));
+			*ret = umath::acos(umath::deg_to_rad(a_pArg[0]->GetFloat()));
 		}>{"acos",1}
 	);
 	p.DefineFun(
 		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::rad_to_deg(umath::tan(umath::deg_to_rad(a_pArg[0]->GetFloat())));
+			*ret = umath::tan(umath::deg_to_rad(a_pArg[0]->GetFloat()));
 		}>{"tan",1}
 	);
 	p.DefineFun(
