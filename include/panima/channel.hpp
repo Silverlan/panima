@@ -111,7 +111,7 @@ namespace panima
 		template<typename T,bool ENABLE_VALIDATION=true>
 			T GetInterpolatedValue(float t,void(*interpFunc)(const void*,const void*,double,void*)) const;
 
-		bool ApplyValueExpression(double time,double &inOutVal) const;
+		bool ApplyValueExpression(double time,uint32_t timeIndex,double &inOutVal) const;
 		bool SetValueExpression(std::string expression,std::string &outErr);
 		const std::string *GetValueExpression() const;
 

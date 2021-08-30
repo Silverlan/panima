@@ -7,11 +7,17 @@
 
 #include <mpParser.h>
 #include <mathutil/uvec.h>
+#include <mathutil/perlin_noise.hpp>
 
 namespace panima
 {
+	struct Channel;
 	struct ValueExpression
 	{
+		ValueExpression(Channel &channel)
+			: channel{channel}
+		{}
+		Channel &channel;
 		std::string expression;
 		struct {
 			mup::ParserX parser;
@@ -21,12 +27,15 @@ namespace panima
 
 			mup::Value time {0.f};
 			mup::Variable timeVar {&time};
+
+			mup::Value timeIndex {0};
+			mup::Variable timeIndexVar {&timeIndex};
 		} mup;
 
 		bool Initialize(std::string &outErr);
-		void Apply(double time,double &inOutValue);
-		void Apply(double time,Vector3 &inOutValue);
-		void Apply(double time,Quat &inOutValue);
+		void Apply(double time,uint32_t timeIndex,double &inOutValue);
+		void Apply(double time,uint32_t timeIndex,Vector3 &inOutValue);
+		void Apply(double time,uint32_t timeIndex,Quat &inOutValue);
 	};
 
 	template<void(*TEval)(mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc)>
@@ -51,6 +60,52 @@ namespace panima
 		}
 
 		virtual IToken* Clone() const override {return new MupFunGeneric(*this);}
+	};
+
+	class MupFunPerlinNoise : public mup::ICallback
+	{
+	public:
+
+		MupFunPerlinNoise()
+			: ICallback(mup::cmFUNC, "noise",3)
+		{}
+
+		MupFunPerlinNoise(const MupFunPerlinNoise &other)=default;
+
+		virtual void Eval(mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) override;
+
+		virtual const mup::char_type* GetDesc() const override
+		{
+			return _T("noise");
+		}
+
+		virtual IToken* Clone() const override {return new MupFunPerlinNoise(*this);}
+	private:
+		umath::PerlinNoise m_noise {static_cast<uint32_t>(umath::random(std::numeric_limits<int>::lowest(),std::numeric_limits<int>::max()))};
+	};
+
+	class MupFunValueAt : public mup::ICallback
+	{
+	public:
+
+		MupFunValueAt(ValueExpression &valueExpression)
+			: ICallback(mup::cmFUNC, "value_at",1),m_valueExpression{valueExpression}
+		{}
+
+		MupFunValueAt(const MupFunValueAt &other)
+			: ICallback{other},m_valueExpression{other.m_valueExpression}
+		{}
+
+		virtual void Eval(mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) override;
+
+		virtual const mup::char_type* GetDesc() const override
+		{
+			return _T("value_at");
+		}
+
+		virtual IToken* Clone() const override {return new MupFunValueAt(*this);}
+	private:
+		ValueExpression &m_valueExpression;
 	};
 };
 
