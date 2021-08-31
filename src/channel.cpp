@@ -43,20 +43,43 @@ void panima::Channel::Resize(uint32_t numValues)
 	m_times->GetValue<udm::Array>().Resize(numValues);
 	m_values->GetValue<udm::Array>().Resize(numValues);
 }
-bool panima::Channel::ApplyValueExpression(double time,uint32_t timeIndex,double &inOutVal) const
+template<typename T>
+	bool panima::Channel::DoApplyValueExpression(double time,uint32_t timeIndex,T &inOutVal) const
 {
 	if(!m_valueExpression)
 		return false;
-	m_valueExpression->Apply(time,timeIndex,inOutVal);
+	m_valueExpression->Apply<T>(time,timeIndex,inOutVal);
 	return true;
 }
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Int8&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::UInt8&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Int16&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::UInt16&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Int32&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::UInt32&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Int64&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::UInt64&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Float&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Double&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Boolean&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vector2&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vector3&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vector4&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Quaternion&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::EulerAngles&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Mat4&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Mat3x4&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vector2i&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vector3i&) const;
+template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vector4i&) const;
+
 bool panima::Channel::SetValueExpression(std::string expression,std::string &outErr)
 {
 	m_valueExpression = nullptr;
 
-	auto expr = std::make_unique<ValueExpression>(*this);
+	auto expr = std::make_unique<expression::ValueExpression>(*this);
 	expr->expression = std::move(expression);
-	if(!expr->Initialize(outErr))
+	if(!expr->Initialize(GetValueType(),outErr))
 		return false;
 	m_valueExpression = std::move(expr);
 	return true;

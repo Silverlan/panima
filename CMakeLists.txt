@@ -56,7 +56,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(ENABLE_STATIC_LIBRARY_FLAG 0)
 # set(PRECOMPILED_HEADER "stdafx")
 
-add_include_dir(muparserx)
+add_include_dir(exprtk)
 add_include_dir(sharedutils)
 add_include_dir(mathutil)
 add_include_dir(vfilesystem)
@@ -79,6 +79,9 @@ endif()
 foreach(def IN LISTS DEFINITIONS)
 	add_definitions(-D${def})
 endforeach(def)
+
+# Required for exprtk
+add_definitions(/bigobj)
 
 function(def_vs_filters FILE_LIST)
 	foreach(source IN LISTS FILE_LIST)

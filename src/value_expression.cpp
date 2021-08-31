@@ -11,269 +11,243 @@
 
 static constexpr auto VALUE_EPSILON = 0.001f;
 
-void panima::MupFunValueAt::Eval(mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc)
+panima::expression::ExprScalar panima::expression::ExprFuncPerlinNoise::operator()(const ExprScalar& v1,const ExprScalar& v2,const ExprScalar& v3)
 {
-	uint32_t pivotIndex = m_valueExpression.mup.timeIndex.GetInteger();
-	*ret = m_valueExpression.channel.GetInterpolatedValue<float>(a_pArg[0]->GetFloat(),pivotIndex);
+	return m_noise.GetNoise(v1,v2,v3);
+}
+template<typename T>
+	panima::expression::ExprScalar panima::expression::ExprFuncValueAtArithmetic<T>::operator()(const ExprScalar& v)
+{
+	assert(m_valueExpression);
+	uint32_t pivotIndex = m_valueExpression->expr.timeIndex;
+	return m_valueExpression->channel.GetInterpolatedValue<T>(v,pivotIndex);
 }
 
-void panima::MupFunPerlinNoise::Eval(mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc)
+template<typename T>
+	panima::expression::ExprScalar panima::expression::ExprFuncValueAtVector<T>::operator()(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters)
 {
-	*ret = m_noise.GetNoise(a_pArg[0]->GetFloat(),a_pArg[1]->GetFloat(),a_pArg[2]->GetFloat());
+	using generic_type = exprtk::igeneric_function<ExprScalar>::generic_type;
+	assert(parameters.size() == 2);
+	typename generic_type::scalar_view t {parameters[0]};
+	typename generic_type::vector_view out {parameters[1]};
+	assert(m_valueExpression);
+	uint32_t pivotIndex = m_valueExpression->expr.timeIndex;
+	auto n = udm::get_numeric_component_count(udm::type_to_enum<T>());
+	assert(out.size() == n);
+	if constexpr(std::is_same_v<udm::underlying_numeric_type<T>,ExprScalar>)
+		*reinterpret_cast<T*>(&out[0]) = m_valueExpression->channel.GetInterpolatedValue<T>(t(),pivotIndex);
+	else
+	{
+		auto value =  m_valueExpression->channel.GetInterpolatedValue<T>(t(),pivotIndex);
+		auto *ptrValue = reinterpret_cast<udm::underlying_numeric_type<T>*>(&value);
+		auto *ptrOut = &out[0];
+		for(auto i=decltype(n){0u};i<n;++i)
+			ptrOut[i] = ptrValue[i];
+	}
+	return {};
 }
 
-static double ramp(double x,double a,double b)
+static panima::expression::ExprScalar ramp(const panima::expression::ExprScalar &x,const panima::expression::ExprScalar &a,const panima::expression::ExprScalar &b)
 {
 	if(a == b)
 		return a;
 	return (x -a) /(b -a);
 }
-static double lerp(double x,double a,double b)
+static panima::expression::ExprScalar lerp(const panima::expression::ExprScalar &x,const panima::expression::ExprScalar &a,const panima::expression::ExprScalar &b)
 {
 	return a +(b -a) *x;
 }
-static double rescale(double X,double Xa,double Xb,double Ya,double Yb)
+static panima::expression::ExprScalar rescale(
+	const panima::expression::ExprScalar &X,const panima::expression::ExprScalar &Xa,const panima::expression::ExprScalar &Xb,
+	const panima::expression::ExprScalar &Ya,const panima::expression::ExprScalar &Yb
+)
 {
 	return lerp(ramp(X,Xa,Xb),Ya,Yb);
 }
 
-bool panima::ValueExpression::Initialize(std::string &outErr)
+namespace panima::expression
 {
-	mup.parser = {};
-	auto &p = mup.parser;
-	p.ClearFun();
-	
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::deg_to_rad(a_pArg[0]->GetFloat());
-		}>{"rad",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::rad_to_deg(a_pArg[0]->GetFloat());
-		}>{"deg",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::abs(a_pArg[0]->GetFloat());
-		}>{"abs",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::floor(a_pArg[0]->GetFloat());
-		}>{"floor",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::ceil(a_pArg[0]->GetFloat());
-		}>{"ceil",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::round(a_pArg[0]->GetFloat());
-		}>{"round",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::sign(static_cast<float>(a_pArg[0]->GetFloat()));
-		}>{"sign",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::pow2(static_cast<float>(a_pArg[0]->GetFloat()));
-		}>{"sqr",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::sqrt(static_cast<float>(a_pArg[0]->GetFloat()));
-		}>{"sqrt",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::sin(umath::deg_to_rad(a_pArg[0]->GetFloat()));
-		}>{"sin",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::asin(umath::deg_to_rad(a_pArg[0]->GetFloat()));
-		}>{"asin",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::cos(umath::deg_to_rad(a_pArg[0]->GetFloat()));
-		}>{"cos",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::acos(umath::deg_to_rad(a_pArg[0]->GetFloat()));
-		}>{"acos",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = umath::tan(umath::deg_to_rad(a_pArg[0]->GetFloat()));
-		}>{"tan",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = exp(a_pArg[0]->GetFloat());
-		}>{"exp",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = log(a_pArg[0]->GetFloat());
-		}>{"log",1}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = std::min(a_pArg[0]->GetFloat(),a_pArg[1]->GetFloat());
-		}>{"min",2}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = std::max(a_pArg[0]->GetFloat(),a_pArg[1]->GetFloat());
-		}>{"max",2}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = atan2f(a_pArg[0]->GetFloat(),a_pArg[1]->GetFloat());
-		}>{"atan2",2}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			*ret = pow(a_pArg[0]->GetFloat(),a_pArg[1]->GetFloat());
-		}>{"pow",2}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto x = a_pArg[0]->GetFloat();
-			auto a = a_pArg[1]->GetFloat();
-			auto b = a_pArg[2]->GetFloat();
-			*ret = (x >= a && x <= b) ? 1 : 0;
-		}>{"inrange",3}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto x = a_pArg[0]->GetFloat();
-			auto a = a_pArg[1]->GetFloat();
-			auto b = a_pArg[2]->GetFloat();
-			*ret = umath::clamp(x,a,b);
-		}>{"clamp",3}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto x = a_pArg[0]->GetFloat();
-			auto a = a_pArg[1]->GetFloat();
-			auto b = a_pArg[2]->GetFloat();
-			*ret = ramp(x,a,b);
-		}>{"ramp",3}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto x = a_pArg[0]->GetFloat();
-			auto a = a_pArg[1]->GetFloat();
-			auto b = a_pArg[2]->GetFloat();
-			*ret = umath::clamp(ramp(x,a,b),0.0,1.0);
-		}>{"cramp",3}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto x = a_pArg[0]->GetFloat();
-			auto a = a_pArg[1]->GetFloat();
-			auto b = a_pArg[2]->GetFloat();
-			*ret = lerp(x,a,b);
-		}>{"lerp",3}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto x = a_pArg[0]->GetFloat();
-			auto a = a_pArg[1]->GetFloat();
-			auto b = a_pArg[2]->GetFloat();
-			*ret = umath::clamp(lerp(x,a,b),a,b);
-		}>{"clerp",3}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto x = a_pArg[0]->GetFloat();
-			auto a = a_pArg[1]->GetFloat();
-			auto b = a_pArg[2]->GetFloat();
-			*ret = ramp(3 *x *x -2 *x *x *x,a,b);
-		}>{"elerp",3}
-	);
-	p.DefineFun(new MupFunPerlinNoise{});
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto X = a_pArg[0]->GetFloat();
-			auto Xa = a_pArg[1]->GetFloat();
-			auto Xb = a_pArg[2]->GetFloat();
-			auto Ya = a_pArg[3]->GetFloat();
-			auto Yb = a_pArg[4]->GetFloat();
-			*ret = rescale(X,Xa,Xb,Ya,Yb);
-		}>{"rescale",5}
-	);
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto X = a_pArg[0]->GetFloat();
-			auto Xa = a_pArg[1]->GetFloat();
-			auto Xb = a_pArg[2]->GetFloat();
-			auto Ya = a_pArg[3]->GetFloat();
-			auto Yb = a_pArg[4]->GetFloat();
-			*ret = umath::clamp(rescale(X,Xa,Xb,Ya,Yb),Ya,Yb);
-		}>{"crescale",5}
-	);
-	p.DefineFun(new MupFunValueAt{*this});
+	extern exprtk::symbol_table<ExprScalar> &get_quaternion_symbol_table();
+	static exprtk::symbol_table<ExprScalar> &get_base_symbol_table()
+	{
+		static exprtk::symbol_table<panima::expression::ExprScalar> symTable;
+		static auto initialized = false;
+		if(initialized)
+			return symTable;
+		initialized = true;
 
-	// For debugging purposes
-	p.DefineFun(
-		new panima::MupFunGeneric<[](mup::ptr_val_type &ret, const mup::ptr_val_type * a_pArg, int a_iArgc) {
-			auto &val = *a_pArg[0];
-			if(val.IsInteger())
+		static ExprFuncGeneric1Param<ExprScalar,[](const ExprScalar &v) -> ExprScalar {return v *v;}> f_sqr {};
+		static ExprFuncGeneric3Param<ExprScalar,ramp> f_ramp {};
+		static ExprFuncGeneric3Param<ExprScalar,[](const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) -> ExprScalar {return umath::clamp(ramp(v1,v2,v3),ExprScalar{0},ExprScalar{1});}> f_cramp {};
+		static ExprFuncGeneric3Param<ExprScalar,lerp> f_lerp {};
+		static ExprFuncGeneric3Param<ExprScalar,[](const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) -> ExprScalar {return umath::clamp(lerp(v1,v2,v3),v2,v3);}> f_clerp {};
+		static ExprFuncGeneric3Param<ExprScalar,[](const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) -> ExprScalar {return ramp(3 *v1 *v1 -2 *v1 *v1 *v1,v2,v3);}> f_elerp {};
+		static ExprFuncGeneric5Param<ExprScalar,rescale> f_rescale {};
+		static ExprFuncGeneric5Param<ExprScalar,[](const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3,const ExprScalar &v4,const ExprScalar &v5) -> ExprScalar {return umath::clamp(rescale(v1,v2,v3,v4,v5),v4,v5);}> f_crescale {};
+
+		symTable.add_function("sqr",f_sqr);
+		symTable.add_function("ramp",f_ramp);
+		symTable.add_function("cramp",f_cramp);
+		symTable.add_function("lerp",f_lerp);
+		symTable.add_function("clerp",f_clerp);
+		symTable.add_function("elerp",f_elerp);
+		symTable.add_function("rescale",f_rescale);
+		symTable.add_function("crescale",f_crescale);
+
+		static ExprFuncPrint<ExprScalar> f_print {};
+		symTable.add_function("print",f_print);
+		symTable.add_constants();
+		return symTable;
+	}
+};
+
+bool panima::expression::ValueExpression::Initialize(udm::Type type,std::string &outErr)
+{
+	auto success = udm::visit_ng(type,[this](auto tag) {
+		using T = decltype(tag)::type;
+		if constexpr(!is_supported_expression_type_v<T>)
+			return false;
+		else
+		{
+			using TExpr = TExprType<T>;
+			if constexpr(std::is_same_v<TExpr,Single>)
 			{
-				std::cout<<val.GetInteger()<<std::endl;
-				*ret = val.GetInteger();
-			}
-			else if(val.IsScalar())
-			{
-				std::cout<<val.GetFloat()<<std::endl;
-				*ret = val.GetFloat();
+				expr.value = Single{0};
+				auto &v = std::get<Single>(expr.value);
+				expr.symbolTable.add_variable("value",v[0]);
+
+				auto valueAt = std::make_unique<ExprFuncValueAtArithmetic<T>>();
+				expr.symbolTable.add_function("value_at",*valueAt);
+				expr.f_valueAt = std::move(valueAt);
 			}
 			else
 			{
-				if(val.IsString())
-					std::cout<<val.GetString()<<std::endl;
-				*ret = 1;
+				expr.value = TExpr{};
+				auto &v = std::get<TExpr>(expr.value);
+				expr.symbolTable.add_vector("value",v.data(),v.size());
+				
+				auto valueAt = std::make_unique<ExprFuncValueAtVector<T>>();
+				expr.symbolTable.add_function("value_at",*valueAt);
+				expr.f_valueAt = std::move(valueAt);
 			}
-		}>{"print",1}
-	);
-
-	p.DefineVar("value",mup.valueVar);
-	p.DefineVar("time",mup.timeVar);
-	p.DefineVar("timeIndex",mup.timeIndexVar);
-	p.SetExpr(expression);
-	try
+			return true;
+		}
+	});
+	if(!success)
 	{
-		// Eval once, which will initialize the RPN for faster execution in the future
-		p.Eval();
+		outErr = "Unsupported type '" +std::string{magic_enum::enum_name(type)} +"'!";
+		return false;
 	}
-	catch(const mup::ParserError &err)
+	m_type = type;
+
+	expr.symbolTable.add_variable("time",expr.time);
+	expr.symbolTable.add_variable("timeIndex",expr.timeIndex);
+
+	assert(expr.f_valueAt != nullptr);
+	expr.f_valueAt->SetValueExpression(*this);
+	
+	expr.symbolTable.add_function("noise",expr.f_perlinNoise);
+	
+	expr.expression.register_symbol_table(get_base_symbol_table());
+	expr.expression.register_symbol_table(get_quaternion_symbol_table());
+	expr.expression.register_symbol_table(expr.symbolTable);
+	if(expr.parser.compile(expression,expr.expression) == false)
 	{
-		outErr = err.GetMsg();
+		outErr = expr.parser.error();
 		return false;
 	}
 	return true;
 }
 
-void panima::ValueExpression::Apply(double time,uint32_t timeIndex,double &inOutValue)
+panima::expression::ValueExpression::~ValueExpression()
 {
-	mup.value = inOutValue;
-	mup.time = time;
-	mup.timeIndex = static_cast<int>(timeIndex);
-	try
+	expr.f_valueAt = nullptr;
+}
+
+template<typename T>
+	void panima::expression::ValueExpression::DoApply(double time,uint32_t timeIndex,T &inOutValue)
+{
+	expr.time = time;
+	expr.timeIndex = static_cast<double>(timeIndex);
+
+	constexpr auto n = udm::get_numeric_component_count(udm::type_to_enum<T>());
+	using type_t = exprtk::results_context<ExprScalar>::type_store_t;
+	if constexpr(std::is_same_v<udm::underlying_numeric_type<T>,ExprScalar>)
 	{
-		auto &res = mup.parser.Eval();
-		inOutValue = res.GetFloat();
+		static_assert(sizeof(TExprType<T>) == sizeof(T));
+		std::get<TExprType<T>>(expr.value) = reinterpret_cast<TExprType<T>&>(inOutValue);
+		if constexpr(n == 1)
+			inOutValue = expr.expression.value();
+		else
+		{
+			// Vector type
+			expr.expression.value();
+			auto &results = expr.expression.results();
+			if(results.count() == 1 && results[0].type == type_t::e_vector)
+			{
+				typename type_t::vector_view vv {results[0]};
+				if(vv.size() == n)
+					inOutValue = *reinterpret_cast<T*>(&vv[0]);
+			}
+		}
 	}
-	catch(const mup::ParserError &err)
+	else
 	{
-		// TODO
+		// Base type mismatch, we'll have to copy
+		auto &exprValue = std::get<TExprType<T>>(expr.value);
+		static_assert(std::tuple_size_v<std::remove_reference_t<decltype(exprValue)>> == n);
+		auto *ptrStart = reinterpret_cast<udm::underlying_numeric_type<T>*>(&inOutValue);
+		auto *ptr = ptrStart;
+		for(auto i=decltype(n){0u};i<n;++i)
+		{
+			exprValue[i] = *ptr;
+			++ptr;
+		}
+
+		if constexpr(n == 1)
+			inOutValue = expr.expression.value();
+		else
+		{
+			// Vector type
+			expr.expression.value();
+			auto &results = expr.expression.results();
+			if(results.count() == 1 && results[0].type == type_t::e_vector)
+			{
+				typename type_t::vector_view vv {results[0]};
+				if(vv.size() == n)
+				{
+					ptr = ptrStart;
+					for(auto i=decltype(n){0u};i<n;++i)
+					{
+						*ptr = vv[i];
+						++ptr;
+					}
+				}
+			}
+		}
 	}
 }
+
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Int8&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::UInt8&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Int16&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::UInt16&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Int32&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::UInt32&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Int64&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::UInt64&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Float&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Double&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Boolean&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector2&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector3&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector4&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Quaternion&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::EulerAngles&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Srgba&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::HdrColor&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Mat4&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Mat3x4&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector2i&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector3i&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector4i&);

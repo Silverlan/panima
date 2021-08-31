@@ -5,6 +5,7 @@
 #ifndef __PANIMA_CHANNEL_HPP__
 #define __PANIMA_CHANNEL_HPP__
 
+#include "panima/expression.hpp"
 #include <sharedutils/util_path.hpp>
 #include <udm_types.hpp>
 
@@ -20,7 +21,7 @@ namespace panima
 		Step,
 		CubicSpline
 	};
-	struct ValueExpression;
+	namespace expression {struct ValueExpression;};
 	struct Channel
 		: public std::enable_shared_from_this<Channel>
 	{
@@ -111,18 +112,25 @@ namespace panima
 		template<typename T,bool ENABLE_VALIDATION=true>
 			T GetInterpolatedValue(float t,void(*interpFunc)(const void*,const void*,double,void*)) const;
 
-		bool ApplyValueExpression(double time,uint32_t timeIndex,double &inOutVal) const;
+		// Note: It is the caller's responsibility to ensure that the type matches the channel type
+		template<typename T> requires(is_supported_expression_type_v<T>)
+			bool ApplyValueExpression(double time,uint32_t timeIndex,T &inOutVal) const
+		{
+			return DoApplyValueExpression<T>(time,timeIndex,inOutVal);
+		}
 		bool SetValueExpression(std::string expression,std::string &outErr);
 		const std::string *GetValueExpression() const;
 
 		void Resize(uint32_t numValues);
 		uint32_t GetSize() const;
 	private:
+		template<typename T>
+			bool DoApplyValueExpression(double time,uint32_t timeIndex,T &inOutVal) const;
 		uint32_t AddValue(float t,const void *value);
 		std::pair<uint32_t,uint32_t> FindInterpolationIndices(float t,float &outInterpFactor,uint32_t pivotIndex,uint32_t recursionDepth) const;
 		udm::PProperty m_times = nullptr;
 		udm::PProperty m_values = nullptr;
-		std::unique_ptr<ValueExpression> m_valueExpression = nullptr;
+		std::unique_ptr<expression::ValueExpression> m_valueExpression = nullptr;
 	};
 };
 

@@ -18,7 +18,7 @@ namespace panima
 	constexpr auto INVALID_ANIMATION = std::numeric_limits<AnimationId>::max();
 	using AnimationChannelId = uint16_t;
 	class Animation;
-	class Channel;
+	struct Channel;
 	class Manager;
 	class Player;
 	class Pose;
