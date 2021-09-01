@@ -21,6 +21,8 @@ bool panima::Channel::Save(udm::LinkedPropertyWrapper &prop) const
 {
 	prop["interpolation"] = interpolation;
 	prop["targetPath"] = targetPath.GetString();
+	if(m_valueExpression)
+		prop["expression"] = m_valueExpression->expression;
 
 	prop["times"] = m_times;
 	prop["values"] = m_values;
@@ -32,6 +34,16 @@ bool panima::Channel::Load(udm::LinkedPropertyWrapper &prop)
 	std::string targetPath;
 	prop["targetPath"](targetPath);
 	this->targetPath = std::move(targetPath);
+
+	auto udmExpression = prop["expression"];
+	if(udmExpression)
+	{
+		std::string expr;
+		udmExpression(expr);
+		std::string err;
+		if(SetValueExpression(expr,err) == false)
+			; // TODO: Print warning?
+	}
 
 	prop["times"](m_times);
 	prop["values"](m_values);
