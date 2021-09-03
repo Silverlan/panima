@@ -9,6 +9,7 @@
 
 #include "slice.hpp"
 #include "types.hpp"
+#include <mathutil/umath.h>
 #include <udm_types.hpp>
 #include <vector>
 #include <memory>
@@ -24,6 +25,12 @@ namespace panima
 		: public std::enable_shared_from_this<Player>
 	{
 	public:
+		enum class StateFlags : uint32_t
+		{
+			None = 0u,
+			Looping = 1u,
+			AnimationDirty = Looping<<1u
+		};
 		static std::shared_ptr<Player> Create();
 		static std::shared_ptr<Player> Create(const Player &other);
 		static std::shared_ptr<Player> Create(Player &&other);
@@ -33,16 +40,16 @@ namespace panima
 		float GetRemainingAnimationDuration() const;
 		float GetCurrentTimeFraction() const;
 		float GetCurrentTime() const {return m_currentTime;}
-		void SetCurrentTimeFraction(float t,bool forceUpdate);
+		void SetCurrentTimeFraction(float t,bool updateAnimation=false);
 		float GetPlaybackRate() const {return m_playbackRate;}
 		void SetPlaybackRate(float playbackRate) {m_playbackRate = playbackRate;}
-		void SetCurrentTime(float t,bool forceUpdate=false);
+		void SetCurrentTime(float t,bool updateAnimation=false);
 		
 		Slice &GetCurrentSlice() {return m_currentSlice;}
 		const Slice &GetCurrentSlice() const {return const_cast<Player*>(this)->GetCurrentSlice();}
 
-		void SetLooping(bool looping) {m_looping = looping;}
-		bool IsLooping() const {return m_looping;}
+		void SetLooping(bool looping);
+		bool IsLooping() const;
 
 		void SetAnimation(const Animation &animation);
 		void Reset();
@@ -61,12 +68,13 @@ namespace panima
 		Slice m_currentSlice;
 		float m_playbackRate = 1.f;
 		float m_currentTime = 0.f;
-		bool m_looping = false;
+		StateFlags m_stateFlags = StateFlags::None;
 
 		std::vector<uint32_t> m_lastChannelTimestampIndices;
 	};
 	using PPlayer = std::shared_ptr<Player>;
 };
+REGISTER_BASIC_BITWISE_OPERATORS(panima::Player::StateFlags)
 
 std::ostream &operator<<(std::ostream &out,const panima::Player &o);
 std::ostream &operator<<(std::ostream &out,const panima::Slice &o);

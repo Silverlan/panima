@@ -26,14 +26,14 @@ panima::Player::Player()
 {}
 panima::Player::Player(const Player &other)
 	: m_playbackRate{other.m_playbackRate},
-	m_currentTime{other.m_currentTime},m_looping{other.m_looping},m_lastChannelTimestampIndices{other.m_lastChannelTimestampIndices},
+	m_currentTime{other.m_currentTime},m_stateFlags{other.m_stateFlags},m_lastChannelTimestampIndices{other.m_lastChannelTimestampIndices},
 	m_animation{other.m_animation},m_currentSlice{other.m_currentSlice}
 {
 	static_assert(sizeof(*this) == 96,"Update this implementation when class has changed!");
 }
 panima::Player::Player(Player &&other)
 	: m_playbackRate{other.m_playbackRate},
-	m_currentTime{other.m_currentTime},m_looping{other.m_looping},m_lastChannelTimestampIndices{std::move(other.m_lastChannelTimestampIndices)},
+	m_currentTime{other.m_currentTime},m_stateFlags{other.m_stateFlags},m_lastChannelTimestampIndices{std::move(other.m_lastChannelTimestampIndices)},
 	m_animation{other.m_animation},m_currentSlice{std::move(other.m_currentSlice)}
 {
 	static_assert(sizeof(*this) == 96,"Update this implementation when class has changed!");
@@ -42,7 +42,7 @@ panima::Player &panima::Player::operator=(const Player &other)
 {
 	m_playbackRate = other.m_playbackRate;
 	m_currentTime = other.m_currentTime;
-	m_looping = other.m_looping;
+	m_stateFlags = other.m_stateFlags;
 	m_animation = other.m_animation;
 	m_currentSlice = other.m_currentSlice;
 
@@ -54,7 +54,7 @@ panima::Player &panima::Player::operator=(Player &&other)
 {
 	m_playbackRate = other.m_playbackRate;
 	m_currentTime = other.m_currentTime;
-	m_looping = other.m_looping;
+	m_stateFlags = other.m_stateFlags;
 	m_animation = other.m_animation;
 	m_currentSlice = std::move(other.m_currentSlice);
 
@@ -75,14 +75,21 @@ float panima::Player::GetCurrentTimeFraction() const
 	auto dur = GetDuration();
 	return (dur > 0.f) ? (t /dur) : 0.f;
 }
-void panima::Player::SetCurrentTimeFraction(float t,bool forceUpdate) {SetCurrentTime(t *GetDuration(),forceUpdate);}
-void panima::Player::SetCurrentTime(float t,bool forceUpdate)
+void panima::Player::SetCurrentTimeFraction(float t,bool updateAnimation) {SetCurrentTime(t *GetDuration(),updateAnimation);}
+void panima::Player::SetCurrentTime(float t,bool updateAnimation)
 {
-	if(t == m_currentTime && !forceUpdate)
+	if(t == m_currentTime)
 		return;
 	m_currentTime = t;
+	if(updateAnimation == false)
+	{
+		m_stateFlags |= StateFlags::AnimationDirty;
+		return;
+	}
 	Advance(0.f,true);
 }
+void panima::Player::SetLooping(bool looping) {umath::set_flag(m_stateFlags,StateFlags::Looping,looping);}
+bool panima::Player::IsLooping() const {return umath::is_flag_set(m_stateFlags,StateFlags::Looping);}
 bool panima::Player::Advance(float dt,bool forceUpdate)
 {
 	if(!m_animation)
@@ -94,7 +101,7 @@ bool panima::Player::Advance(float dt,bool forceUpdate)
 	auto dur = anim->GetDuration();
 	if(newTime > dur)
 	{
-		if(m_looping && dur > 0.f)
+		if(umath::is_flag_set(m_stateFlags,StateFlags::Looping) && dur > 0.f)
 		{
 			auto d = fmodf(newTime,dur);
 			newTime = d;
@@ -102,8 +109,9 @@ bool panima::Player::Advance(float dt,bool forceUpdate)
 		else
 			newTime = dur;
 	}
-	if(newTime == m_currentTime && !forceUpdate)
+	if(newTime == m_currentTime && !forceUpdate && !umath::is_flag_set(m_stateFlags,StateFlags::AnimationDirty))
 		return false;
+	umath::set_flag(m_stateFlags,StateFlags::AnimationDirty,false);
 	m_currentTime = newTime;
 	return true;
 	/*auto &channels = anim->GetChannels();
