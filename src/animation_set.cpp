@@ -93,3 +93,10 @@ std::optional<panima::AnimationId> panima::AnimationSet::LookupAnimation(const s
 		return {};
 	return it->second;
 }
+
+std::ostream &operator<<(std::ostream &out,const panima::AnimationSet &o)
+{
+	out<<"AnimationSet";
+	out<<"[Count:"<<o.GetSize()<<"]";
+	return out;
+}

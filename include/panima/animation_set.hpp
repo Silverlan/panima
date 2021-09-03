@@ -48,4 +48,6 @@ namespace panima
 	};
 };
 
+std::ostream &operator<<(std::ostream &out,const panima::AnimationSet &o);
+
 #endif
