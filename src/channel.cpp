@@ -110,37 +110,48 @@ uint32_t panima::Channel::AddValue(float t,const void *value)
 	{
 		auto size = GetSize() +1;
 		Resize(size);
-		GetTimesArray()[size -1] = t;
-		GetValueArray()[size -1] = value;
-		return 0;
+		auto idx = size -1;
+		GetTimesArray()[idx] = t;
+		GetValueArray()[idx] = value;
+		return idx;
 	}
 	if(umath::abs(t -*GetTime(indices.first)) < VALUE_EPSILON)
 	{
 		// Replace value at first index with new value
-		GetTimesArray()[indices.first] = t;
-		GetValueArray()[indices.first] = value;
-		return 0;
+		auto idx = indices.first;
+		GetTimesArray()[idx] = t;
+		GetValueArray()[idx] = value;
+		return idx;
 	}
 	if(umath::abs(t -*GetTime(indices.second)) < VALUE_EPSILON)
 	{
 		// Replace value at second index with new value
-		GetTimesArray()[indices.second] = t;
-		GetValueArray()[indices.second] = value;
-		return 0;
+		auto idx = indices.second;
+		GetTimesArray()[idx] = t;
+		GetValueArray()[idx] = value;
+		return idx;
+	}
+	auto &times = GetTimesArray();
+	auto &values = GetValueArray();
+	if(indices.first == indices.second)
+	{
+		// New time value exceeds last time value in time array, push back
+		auto idx = indices.second +1;
+		times.InsertValue(idx,t);
+		udm::visit_ng(GetValueType(),[&values,idx,value](auto tag) {
+			using T = decltype(tag)::type;
+			values.InsertValue(idx,*static_cast<const T*>(value));
+		});
+		return idx;
 	}
 	// Insert new value between the two indices
-	
-	//	udm::PProperty m_times = nullptr;
-	//	udm::PProperty m_values = nullptr;
-
-
-	// This is a stub
-	throw std::runtime_error{"Not yet implemented"};
-	return 0;
-	//float interpFactor;
-	//auto indices = FindInterpolationIndices(t,interpFactor);
-	//values.insert(values.begin() +indices.first);
-	//values.
+	auto idx = indices.second;
+	times.InsertValue(idx,t);
+	udm::visit_ng(GetValueType(),[&values,idx,value](auto tag) {
+		using T = decltype(tag)::type;
+		values.InsertValue(idx,*static_cast<const T*>(value));
+	});
+	return idx;
 }
 udm::Array &panima::Channel::GetTimesArray() {return m_times->GetValue<udm::Array>();}
 udm::Array &panima::Channel::GetValueArray() {return m_values->GetValue<udm::Array>();}

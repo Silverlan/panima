@@ -23,7 +23,7 @@ template<typename T>
 {
 	if(udm::type_to_enum<T>() != GetValueType())
 		throw std::invalid_argument{"Value type mismatch!"};
-	return AddValue(t,&value);
+	return AddValue(t,static_cast<const void*>(&value));
 }
 
 /////////////////////
