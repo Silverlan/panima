@@ -50,7 +50,8 @@ namespace panima
 
 		void SetLooping(bool looping);
 		bool IsLooping() const;
-
+		
+		void SetAnimationDirty();
 		void SetAnimation(const Animation &animation);
 		void Reset();
 

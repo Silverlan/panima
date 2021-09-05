@@ -88,6 +88,7 @@ void panima::Player::SetCurrentTime(float t,bool updateAnimation)
 	}
 	Advance(0.f,true);
 }
+void panima::Player::SetAnimationDirty() {umath::set_flag(m_stateFlags,StateFlags::AnimationDirty,true);}
 void panima::Player::SetLooping(bool looping) {umath::set_flag(m_stateFlags,StateFlags::Looping,looping);}
 bool panima::Player::IsLooping() const {return umath::is_flag_set(m_stateFlags,StateFlags::Looping);}
 bool panima::Player::Advance(float dt,bool forceUpdate)

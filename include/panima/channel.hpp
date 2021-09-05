@@ -21,6 +21,14 @@ namespace panima
 		Step,
 		CubicSpline
 	};
+
+	struct TimeFrame
+	{
+		float startOffset = 0.f;
+		float scale = 1.f;
+		float duration = -1.f;
+	};
+
 	namespace expression {struct ValueExpression;};
 	struct Channel
 		: public std::enable_shared_from_this<Channel>
@@ -121,9 +129,14 @@ namespace panima
 		bool SetValueExpression(std::string expression,std::string &outErr);
 		const std::string *GetValueExpression() const;
 
+		void SetTimeFrame(TimeFrame timeFrame) {m_timeFrame = std::move(timeFrame);}
+		TimeFrame &GetTimeFrame() {return m_timeFrame;}
+		const TimeFrame &GetTimeFrame() const {return const_cast<Channel*>(this)->GetTimeFrame();}
+
 		void Resize(uint32_t numValues);
 		uint32_t GetSize() const;
 	private:
+		void TimeToLocalTimeFrame(float &inOutT) const;
 		template<typename T>
 			bool DoApplyValueExpression(double time,uint32_t timeIndex,T &inOutVal) const;
 		uint32_t AddValue(float t,const void *value);
@@ -131,6 +144,7 @@ namespace panima
 		udm::PProperty m_times = nullptr;
 		udm::PProperty m_values = nullptr;
 		std::unique_ptr<expression::ValueExpression> m_valueExpression = nullptr;
+		TimeFrame m_timeFrame {};
 	};
 };
 

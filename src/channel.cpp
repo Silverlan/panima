@@ -157,6 +157,13 @@ udm::Array &panima::Channel::GetTimesArray() {return m_times->GetValue<udm::Arra
 udm::Array &panima::Channel::GetValueArray() {return m_values->GetValue<udm::Array>();}
 udm::Type panima::Channel::GetValueType() const {return GetValueArray().GetValueType();}
 void panima::Channel::SetValueType(udm::Type type) {GetValueArray().SetValueType(type);}
+void panima::Channel::TimeToLocalTimeFrame(float &inOutT) const
+{
+	inOutT -= m_timeFrame.startOffset;
+	if(m_timeFrame.duration >= 0.f)
+		inOutT = umath::min(inOutT,m_timeFrame.duration);
+	inOutT *= m_timeFrame.scale;
+}
 std::pair<uint32_t,uint32_t> panima::Channel::FindInterpolationIndices(float t,float &interpFactor,uint32_t pivotIndex,uint32_t recursionDepth) const
 {
 	constexpr uint32_t MAX_RECURSION_DEPTH = 2;
@@ -167,7 +174,9 @@ std::pair<uint32_t,uint32_t> panima::Channel::FindInterpolationIndices(float t,f
 	// If we have a match, we can return immediately. If not, we'll slightly broaden the search until we've reached the max recursion depth or found a match.
 	// If we hit the max recusion depth, we'll just do a regular binary search instead.
 	auto tPivot = times.GetValue<float>(pivotIndex);
-	if(t >= tPivot)
+	auto tLocal = t;
+	TimeToLocalTimeFrame(tLocal);
+	if(tLocal >= tPivot)
 	{
 		if(pivotIndex == times.GetSize() -1)
 		{
@@ -175,10 +184,10 @@ std::pair<uint32_t,uint32_t> panima::Channel::FindInterpolationIndices(float t,f
 			return {static_cast<uint32_t>(GetValueArray().GetSize() -1),static_cast<uint32_t>(GetValueArray().GetSize() -1)};
 		}
 		auto tPivotNext = times.GetValue<float>(pivotIndex +1);
-		if(t < tPivotNext)
+		if(tLocal < tPivotNext)
 		{
 			// Most common case
-			interpFactor = (t -tPivot) /(tPivotNext -tPivot);
+			interpFactor = (tLocal -tPivot) /(tPivotNext -tPivot);
 			return {pivotIndex,pivotIndex +1};
 		}
 		return FindInterpolationIndices(t,interpFactor,pivotIndex +1,recursionDepth +1);
@@ -251,6 +260,7 @@ std::pair<uint32_t,uint32_t> panima::Channel::FindInterpolationIndices(float t,f
 		return {std::numeric_limits<uint32_t>::max(),std::numeric_limits<uint32_t>::max()};
 	}
 	// Binary search
+	TimeToLocalTimeFrame(t);
 	auto it = std::upper_bound(begin(times),end(times),t);
 	if(it == end(times))
 	{
