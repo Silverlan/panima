@@ -8,8 +8,55 @@
 #include "panima/channel.hpp"
 #include "value_expression.hpp"
 #include <udm.hpp>
+#include <sharedutils/util_uri.hpp>
 
 static constexpr auto VALUE_EPSILON = 0.001f;
+
+panima::ChannelPath::ChannelPath(const std::string &path)
+{
+	uriparser::Uri uri {path};
+	auto scheme = uri.scheme();
+	if(!scheme.empty() && scheme != "panima")
+		return; // Invalid panima URI
+	ChannelPath channelPath;
+	channelPath.path = uri.path();
+	auto strQueries = uri.query();
+	std::vector<std::string> queries;
+	ustring::explode(strQueries,"&",queries);
+	for(auto &queryParam : queries)
+	{
+		std::vector<std::string> query;
+		ustring::explode(queryParam,"=",query);
+		if(query.size() < 2)
+			continue;
+		if(query.front() == "components")
+		{
+			channelPath.components = std::vector<std::string>{};
+			ustring::explode(query[1],",",*channelPath.components);
+		}
+	}
+}
+std::string panima::ChannelPath::ToUri() const
+{
+	std::string uri = "panima:" +path;
+	if(components.has_value())
+	{
+		std::string strComponents;
+		for(auto first=true;auto &c : *components)
+		{
+			if(first)
+				first = false;
+			else
+				strComponents += ",";
+			strComponents += c;
+		}
+		if(!strComponents.empty())
+			uri += "?" +strComponents;
+	}
+	return uri;
+}
+
+////////////////
 
 panima::Channel::Channel()
 	: m_times{::udm::Property::Create(udm::Type::ArrayLz4)},m_values{::udm::Property::Create(udm::Type::ArrayLz4)}

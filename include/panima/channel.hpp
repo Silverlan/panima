@@ -29,6 +29,17 @@ namespace panima
 		float duration = -1.f;
 	};
 
+	// Example URI: panima:ec/color/color?components=red,blue
+	struct ChannelPath
+	{
+		ChannelPath()=default;
+		ChannelPath(const std::string &path);
+		std::string path;
+		std::optional<std::vector<std::string>> components;
+
+		std::string ToUri() const;
+	};
+
 	namespace expression {struct ValueExpression;};
 	struct Channel
 		: public std::enable_shared_from_this<Channel>
