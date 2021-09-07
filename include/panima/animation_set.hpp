@@ -41,6 +41,9 @@ namespace panima
 
 		void Reserve(uint32_t count);
 		uint32_t GetSize() const;
+
+		bool operator==(const AnimationSet &other) const {return this == &other;}
+		bool operator!=(const AnimationSet &other) const {return !operator==(other);}
 	private:
 		AnimationSet();
 		std::vector<std::shared_ptr<Animation>> m_animations;

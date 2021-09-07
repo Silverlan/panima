@@ -71,6 +71,9 @@ namespace panima
 		const panima::AnimationSet *FindAnimationSet(const std::string &name) const {return const_cast<AnimationManager*>(this)->FindAnimationSet(name);}
 
 		void SetCallbackInterface(const AnimationPlayerCallbackInterface &i) {m_callbackInterface = i;}
+
+		bool operator==(const AnimationManager &other) const {return this == &other;}
+		bool operator!=(const AnimationManager &other) const {return !operator==(other);}
 	private:
 		std::optional<AnimationSetIndex> FindAnimationSetIndex(const std::string &name) const;
 		AnimationReference FindAnimation(AnimationSetIndex animSetIndex,panima::AnimationId animation,PlaybackFlags flags) const;

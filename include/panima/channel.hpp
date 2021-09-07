@@ -37,7 +37,7 @@ namespace panima
 		std::string path;
 		std::optional<std::vector<std::string>> components;
 
-		std::string ToUri() const;
+		std::string ToUri(bool includeScheme=true) const;
 	};
 
 	namespace expression {struct ValueExpression;};
@@ -146,6 +146,9 @@ namespace panima
 
 		void Resize(uint32_t numValues);
 		uint32_t GetSize() const;
+
+		bool operator==(const Channel &other) const {return this == &other;}
+		bool operator!=(const Channel &other) const {return !operator==(other);}
 	private:
 		void TimeToLocalTimeFrame(float &inOutT) const;
 		template<typename T>
@@ -160,5 +163,8 @@ namespace panima
 };
 
 std::ostream &operator<<(std::ostream &out,const panima::Channel &o);
+std::ostream &operator<<(std::ostream &out,const panima::TimeFrame &o);
+std::ostream &operator<<(std::ostream &out,const panima::ChannelPath &o);
+
 
 #endif

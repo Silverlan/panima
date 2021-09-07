@@ -12,14 +12,15 @@
 
 static constexpr auto VALUE_EPSILON = 0.001f;
 
-panima::ChannelPath::ChannelPath(const std::string &path)
+panima::ChannelPath::ChannelPath(const std::string &ppath)
 {
-	uriparser::Uri uri {path};
+	uriparser::Uri uri {ppath};
 	auto scheme = uri.scheme();
 	if(!scheme.empty() && scheme != "panima")
 		return; // Invalid panima URI
-	ChannelPath channelPath;
-	channelPath.path = uri.path();
+	path = uri.path();
+	if(!path.empty() && path.front() == '/')
+		path.erase(path.begin());
 	auto strQueries = uri.query();
 	std::vector<std::string> queries;
 	ustring::explode(strQueries,"&",queries);
@@ -31,14 +32,17 @@ panima::ChannelPath::ChannelPath(const std::string &path)
 			continue;
 		if(query.front() == "components")
 		{
-			channelPath.components = std::vector<std::string>{};
-			ustring::explode(query[1],",",*channelPath.components);
+			components = std::vector<std::string>{};
+			ustring::explode(query[1],",",*components);
 		}
 	}
 }
-std::string panima::ChannelPath::ToUri() const
+std::string panima::ChannelPath::ToUri(bool includeScheme) const
 {
-	std::string uri = "panima:" +path;
+	std::string uri;
+	if(includeScheme)
+		uri = "panima:";
+	uri += path;
 	if(components.has_value())
 	{
 		std::string strComponents;
@@ -344,5 +348,19 @@ std::ostream &operator<<(std::ostream &out,const panima::Channel &o)
 	auto n = o.GetTimeCount();
 	if(n > 0)
 		out<<"[TimeRange:"<<*o.GetTime(0)<<","<<*o.GetTime(n -1)<<"]";
+	return out;
+}
+std::ostream &operator<<(std::ostream &out,const panima::TimeFrame &o)
+{
+	out<<"TimeFrame";
+	out<<"[StartOffset:"<<o.startOffset<<"]";
+	out<<"[Scale:"<<o.scale<<"]";
+	out<<"[Duration:"<<o.duration<<"]";
+	return out;
+}
+std::ostream &operator<<(std::ostream &out,const panima::ChannelPath &o)
+{
+	out<<"ChannelPath";
+	out<<"["<<o.ToUri()<<"]";
 	return out;
 }

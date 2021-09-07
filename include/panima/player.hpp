@@ -60,6 +60,9 @@ namespace panima
 
 		Player &operator=(const Player &other);
 		Player &operator=(Player &&other);
+
+		bool operator==(const Player &other) const {return this == &other;}
+		bool operator!=(const Player &other) const {return !operator==(other);}
 	private:
 		Player();
 		Player(const Player &other);

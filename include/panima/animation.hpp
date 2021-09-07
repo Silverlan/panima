@@ -52,6 +52,9 @@ namespace panima
 
 		float GetDuration() const {return m_duration;}
 		void SetDuration(float duration) {m_duration = duration;}
+
+		bool operator==(const Animation &other) const {return this == &other;}
+		bool operator!=(const Animation &other) const {return !operator==(other);}
 	private:
 		std::vector<std::shared_ptr<Channel>> m_channels;
 		std::string m_name;
