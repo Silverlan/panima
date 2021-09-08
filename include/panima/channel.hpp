@@ -34,10 +34,18 @@ namespace panima
 	{
 		ChannelPath()=default;
 		ChannelPath(const std::string &path);
-		std::string path;
-		std::optional<std::vector<std::string>> components;
 
+		bool operator==(const ChannelPath &other) const;
+		bool operator!=(const ChannelPath &other) const {return !const_cast<ChannelPath*>(this)->operator==(other);}
+
+		std::vector<std::string> *GetComponents() {return m_components.get();}
+		const std::vector<std::string> *GetComponents() const {return const_cast<ChannelPath*>(this)->GetComponents();}
+		util::Path path;
+
+		operator std::string() const {return ToUri();}
 		std::string ToUri(bool includeScheme=true) const;
+	private:
+		std::unique_ptr<std::vector<std::string>> m_components = nullptr;
 	};
 
 	namespace expression {struct ValueExpression;};
@@ -83,7 +91,7 @@ namespace panima
 		Channel &operator=(Channel&&)=default;
 		~Channel();
 		ChannelInterpolation interpolation = ChannelInterpolation::Linear;
-		util::Path targetPath;
+		ChannelPath targetPath;
 
 		template<typename T>
 			uint32_t AddValue(float t,const T &value);

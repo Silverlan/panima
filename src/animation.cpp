@@ -10,11 +10,12 @@
 #include <udm.hpp>
 #include <mathutil/umath.h>
 
-panima::Channel *panima::Animation::AddChannel(const util::Path &path,udm::Type valueType)
+panima::Channel *panima::Animation::AddChannel(std::string path,udm::Type valueType)
 {
+	ChannelPath channelPath {std::move(path)};
 	auto *channel = FindChannel(path);
 	if(channel)
-		return (channel->targetPath == path && channel->GetValueType() == valueType) ? channel : nullptr;
+		return (channel->targetPath == channelPath && channel->GetValueType() == valueType) ? channel : nullptr;
 	m_channels.push_back(std::make_shared<Channel>());
 	channel = m_channels.back().get();
 	channel->SetValueType(valueType);

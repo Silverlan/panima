@@ -30,7 +30,7 @@ namespace panima
 		};
 		Animation()=default;
 		void AddChannel(Channel &channel);
-		Channel *AddChannel(const util::Path &path,udm::Type valueType);
+		Channel *AddChannel(std::string path,udm::Type valueType);
 		const std::vector<std::shared_ptr<Channel>> &GetChannels() const {return const_cast<Animation*>(this)->GetChannels();}
 		std::vector<std::shared_ptr<Channel>> &GetChannels() {return m_channels;}
 		uint32_t GetChannelCount() const {return m_channels.size();}

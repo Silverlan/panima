@@ -45,6 +45,8 @@ namespace panima
 	class AnimationSet;
 	using PAnimationSet = std::shared_ptr<AnimationSet>;
 	using ChannelValueSubmitter = std::function<void(Channel&,uint32_t&,double)>;
+
+	struct ChannelPath;
 };
 
 #endif

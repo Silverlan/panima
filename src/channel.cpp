@@ -18,9 +18,10 @@ panima::ChannelPath::ChannelPath(const std::string &ppath)
 	auto scheme = uri.scheme();
 	if(!scheme.empty() && scheme != "panima")
 		return; // Invalid panima URI
-	path = uri.path();
-	if(!path.empty() && path.front() == '/')
-		path.erase(path.begin());
+	auto strPath = uri.path();
+	if(!strPath.empty() && strPath.front() == '/')
+		strPath.erase(strPath.begin());
+	path = std::move(strPath);
 	auto strQueries = uri.query();
 	std::vector<std::string> queries;
 	ustring::explode(strQueries,"&",queries);
@@ -32,21 +33,29 @@ panima::ChannelPath::ChannelPath(const std::string &ppath)
 			continue;
 		if(query.front() == "components")
 		{
-			components = std::vector<std::string>{};
-			ustring::explode(query[1],",",*components);
+			m_components = std::make_unique<std::vector<std::string>>();
+			ustring::explode(query[1],",",*m_components);
 		}
 	}
+}
+bool panima::ChannelPath::operator==(const ChannelPath &other) const
+{
+	return path == other.path &&
+		(
+			(!m_components && !other.m_components) ||
+			(m_components && other.m_components && *m_components == *other.m_components)
+		);
 }
 std::string panima::ChannelPath::ToUri(bool includeScheme) const
 {
 	std::string uri;
 	if(includeScheme)
 		uri = "panima:";
-	uri += path;
-	if(components.has_value())
+	uri += path.GetString();
+	if(m_components)
 	{
 		std::string strComponents;
-		for(auto first=true;auto &c : *components)
+		for(auto first=true;auto &c : *m_components)
 		{
 			if(first)
 				first = false;
@@ -71,7 +80,7 @@ panima::Channel::~Channel() {}
 bool panima::Channel::Save(udm::LinkedPropertyWrapper &prop) const
 {
 	prop["interpolation"] = interpolation;
-	prop["targetPath"] = targetPath.GetString();
+	prop["targetPath"] = targetPath.ToUri();
 	if(m_valueExpression)
 		prop["expression"] = m_valueExpression->expression;
 
