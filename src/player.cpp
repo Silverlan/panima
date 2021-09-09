@@ -107,8 +107,8 @@ bool panima::Player::Advance(float dt,bool forceUpdate)
 			auto d = fmodf(newTime,dur);
 			newTime = d;
 		}
-		else
-			newTime = dur;
+		// else
+		// 	newTime = dur;
 	}
 	if(newTime == m_currentTime && !forceUpdate && !umath::is_flag_set(m_stateFlags,StateFlags::AnimationDirty))
 		return false;
