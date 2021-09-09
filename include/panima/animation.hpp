@@ -38,8 +38,8 @@ namespace panima
 		bool Save(udm::LinkedPropertyWrapper &prop) const;
 		bool Load(udm::LinkedPropertyWrapper &prop);
 
-		Channel *FindChannel(const util::Path &path);
-		const Channel *FindChannel(const util::Path &path) const {return const_cast<Animation*>(this)->FindChannel(path);}
+		Channel *FindChannel(std::string path);
+		const Channel *FindChannel(std::string path) const {return const_cast<Animation*>(this)->FindChannel(std::move(path));}
 
 		float GetAnimationSpeedFactor() const {return m_speedFactor;}
 		void SetAnimationSpeedFactor(float f) {m_speedFactor = f;}

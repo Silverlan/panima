@@ -36,10 +36,11 @@ void panima::Animation::AddChannel(Channel &channel)
 	m_channels.push_back(channel.shared_from_this());
 }
 
-panima::Channel *panima::Animation::FindChannel(const util::Path &path)
+panima::Channel *panima::Animation::FindChannel(std::string path)
 {
-	auto it = std::find_if(m_channels.begin(),m_channels.end(),[&path](const std::shared_ptr<Channel> &channel) {
-		return channel->targetPath == path;
+	ChannelPath channelPath {std::move(path)};
+	auto it = std::find_if(m_channels.begin(),m_channels.end(),[&channelPath](const std::shared_ptr<Channel> &channel) {
+		return channel->targetPath == channelPath;
 	});
 	if(it == m_channels.end())
 		return nullptr;
