@@ -120,7 +120,7 @@ template<typename T>
 {
 	if(!m_valueExpression)
 		return false;
-	m_valueExpression->Apply<T>(time,timeIndex,inOutVal);
+	m_valueExpression->Apply<T>(time,timeIndex,m_timeFrame,inOutVal);
 	return true;
 }
 template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Int8&) const;
@@ -145,6 +145,18 @@ template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vecto
 template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vector3i&) const;
 template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Vector4i&) const;
 
+float panima::Channel::GetMinTime() const
+{
+	if(GetTimeCount() == 0)
+		return 0.f;
+	return *GetTimesArray().GetFront<float>();
+}
+float panima::Channel::GetMaxTime() const
+{
+	if(GetTimeCount() == 0)
+		return 0.f;
+	return *GetTimesArray().GetBack<float>();
+}
 bool panima::Channel::SetValueExpression(std::string expression,std::string &outErr)
 {
 	m_valueExpression = nullptr;

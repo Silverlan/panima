@@ -103,6 +103,9 @@ namespace panima
 		udm::Type GetValueType() const;
 		void SetValueType(udm::Type type);
 
+		float GetMinTime() const;
+		float GetMaxTime() const;
+
 		uint32_t GetTimeCount() const;
 		uint32_t GetValueCount() const;
 		std::optional<float> GetTime(uint32_t idx) const;

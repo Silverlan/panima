@@ -142,6 +142,10 @@ bool panima::expression::ValueExpression::Initialize(udm::Type type,std::string 
 
 	expr.symbolTable.add_variable("time",expr.time);
 	expr.symbolTable.add_variable("timeIndex",expr.timeIndex);
+	
+	expr.symbolTable.add_variable("startOffset",expr.startOffset);
+	expr.symbolTable.add_variable("timeScale",expr.timeScale);
+	expr.symbolTable.add_variable("duration",expr.duration);
 
 	assert(expr.f_valueAt != nullptr);
 	expr.f_valueAt->SetValueExpression(*this);
@@ -165,10 +169,14 @@ panima::expression::ValueExpression::~ValueExpression()
 }
 
 template<typename T>
-	void panima::expression::ValueExpression::DoApply(double time,uint32_t timeIndex,T &inOutValue)
+	void panima::expression::ValueExpression::DoApply(double time,uint32_t timeIndex,const TimeFrame &timeFrame,T &inOutValue)
 {
 	expr.time = time;
 	expr.timeIndex = static_cast<double>(timeIndex);
+
+	expr.startOffset = timeFrame.startOffset;
+	expr.timeScale = timeFrame.scale;
+	expr.duration = timeFrame.duration;
 
 	constexpr auto n = udm::get_numeric_component_count(udm::type_to_enum<T>());
 	using type_t = exprtk::results_context<ExprScalar>::type_store_t;
@@ -228,26 +236,26 @@ template<typename T>
 	}
 }
 
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Int8&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::UInt8&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Int16&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::UInt16&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Int32&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::UInt32&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Int64&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::UInt64&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Float&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Double&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Boolean&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector2&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector3&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector4&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Quaternion&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::EulerAngles&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Srgba&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::HdrColor&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Mat4&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Mat3x4&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector2i&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector3i&);
-template void panima::expression::ValueExpression::DoApply(double,uint32_t,udm::Vector4i&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Int8&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::UInt8&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Int16&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::UInt16&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Int32&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::UInt32&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Int64&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::UInt64&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Float&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Double&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Boolean&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector2&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector3&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector4&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Quaternion&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::EulerAngles&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Srgba&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::HdrColor&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Mat4&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Mat3x4&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector2i&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector3i&);
+template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector4i&);

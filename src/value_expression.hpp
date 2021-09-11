@@ -14,6 +14,7 @@
 namespace panima
 {
 	struct Channel;
+	struct TimeFrame;
 	namespace expression
 	{
 		struct ValueExpression;
@@ -254,17 +255,21 @@ namespace panima
 				std::variant<Single,Vector2,Vector3,Vector4,Mat3x4,Mat4> value;
 				ExprScalar time {0.0};
 				ExprScalar timeIndex{0};
+
+				ExprScalar startOffset {0.0};
+				ExprScalar timeScale {1.0};
+				ExprScalar duration {0.0};
 			} expr;
 		
 			bool Initialize(udm::Type type,std::string &outErr);
 			template<typename T> requires(is_supported_expression_type_v<T>)
-				void Apply(double time,uint32_t timeIndex,T &inOutValue)
+				void Apply(double time,uint32_t timeIndex,const TimeFrame &timeFrame,T &inOutValue)
 			{
-				DoApply<T>(time,timeIndex,inOutValue);
+				DoApply<T>(time,timeIndex,timeFrame,inOutValue);
 			}
 		private:
 			template<typename T>
-				void DoApply(double time,uint32_t timeIndex,T &inOutValue);
+				void DoApply(double time,uint32_t timeIndex,const TimeFrame &timeFrame,T &inOutValue);
 			udm::Type m_type = udm::Type::Invalid;
 		};
 	};
