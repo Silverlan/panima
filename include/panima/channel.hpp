@@ -157,6 +157,7 @@ namespace panima
 
 		void Resize(uint32_t numValues);
 		uint32_t GetSize() const;
+		void Update();
 
 		bool operator==(const Channel &other) const {return this == &other;}
 		bool operator!=(const Channel &other) const {return !operator==(other);}
@@ -170,6 +171,7 @@ namespace panima
 		udm::PProperty m_values = nullptr;
 		std::unique_ptr<expression::ValueExpression> m_valueExpression = nullptr;
 		TimeFrame m_timeFrame {};
+		TimeFrame m_effectiveTimeFrame {};
 	};
 };
 

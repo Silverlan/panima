@@ -115,12 +115,18 @@ void panima::Channel::Resize(uint32_t numValues)
 	m_times->GetValue<udm::Array>().Resize(numValues);
 	m_values->GetValue<udm::Array>().Resize(numValues);
 }
+void panima::Channel::Update()
+{
+	m_effectiveTimeFrame = m_timeFrame;
+	if(m_effectiveTimeFrame.duration < 0.f)
+		m_effectiveTimeFrame.duration = GetMaxTime();
+}
 template<typename T>
 	bool panima::Channel::DoApplyValueExpression(double time,uint32_t timeIndex,T &inOutVal) const
 {
 	if(!m_valueExpression)
 		return false;
-	m_valueExpression->Apply<T>(time,timeIndex,m_timeFrame,inOutVal);
+	m_valueExpression->Apply<T>(time,timeIndex,m_effectiveTimeFrame,inOutVal);
 	return true;
 }
 template bool panima::Channel::DoApplyValueExpression(double,uint32_t,udm::Int8&) const;
