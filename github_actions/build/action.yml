@@ -42,7 +42,7 @@ runs:
         include_dir: '.'
             
     - name: Build submodule - util_udm
-      uses: Silverlan/util_udm/github_actions/build@main
+      uses: Silverlan/util_udm/github_actions/build@master
       with:
         root_dir: "${{ env.GA_ROOT_DIR }}/external_libs/util_udm"
 
