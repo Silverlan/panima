@@ -105,8 +105,15 @@ bool panima::Channel::Load(udm::LinkedPropertyWrapper &prop)
 			; // TODO: Print warning?
 	}
 
-	prop["times"](m_times);
-	prop["values"](m_values);
+	auto *el = prop.GetValuePtr<udm::Element>();
+	if(!el)
+		return false;
+	auto itTimes = el->children.find("times");
+	auto itValues = el->children.find("values");
+	if(itTimes == el->children.end() || itValues == el->children.end())
+		return false;
+	m_times = itTimes->second;
+	m_values = itValues->second;
 	return true;
 }
 uint32_t panima::Channel::GetSize() const {return GetTimesArray().GetSize();}
