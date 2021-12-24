@@ -9,7 +9,7 @@
 #include "panima/bone.hpp"
 #include <functional>
 #include <udm.hpp>
-
+#pragma optimize("",off)
 std::shared_ptr<panima::Skeleton> panima::Skeleton::Load(const udm::AssetData &data,std::string &outErr)
 {
 	auto skeleton = std::make_shared<Skeleton>();
@@ -169,6 +169,8 @@ bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data,std::string 
 		auto &bone = bones[boneInfo.index];
 		bone->name = boneInfo.name;
 
+		if(boneInfo.index >= m_referencePoses.size())
+			throw std::runtime_error{"Bone index " +std::to_string(boneInfo.index) +" for reference pose is out of bounds!"};
 		auto &pose = m_referencePoses[boneInfo.index];
 		boneInfo.udmBone["pose"](pose);
 
@@ -242,3 +244,4 @@ void panima::Skeleton::Merge(Skeleton &other)
 	auto &otherRootBones = other.GetRootBones();
 	mergeHierarchy(otherRootBones,nullptr);
 }
+#pragma optimize("",on)

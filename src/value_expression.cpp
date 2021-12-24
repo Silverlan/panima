@@ -189,13 +189,20 @@ template<typename T>
 		else
 		{
 			// Vector type
-			expr.expression.value();
+			auto floatVal = expr.expression.value();
 			auto &results = expr.expression.results();
 			if(results.count() == 1 && results[0].type == type_t::e_vector)
 			{
 				typename type_t::vector_view vv {results[0]};
 				if(vv.size() == n)
 					inOutValue = *reinterpret_cast<T*>(&vv[0]);
+			}
+			else
+			{
+				// Expression returned a single float value?
+				// We'll assume it's intended to be interpreted as a vector
+				if constexpr(udm::is_vector_type<T>)
+					inOutValue = T{static_cast<T::value_type>(floatVal)};
 			}
 		}
 	}
@@ -217,7 +224,7 @@ template<typename T>
 		else
 		{
 			// Vector type
-			expr.expression.value();
+			auto floatVal = expr.expression.value();
 			auto &results = expr.expression.results();
 			if(results.count() == 1 && results[0].type == type_t::e_vector)
 			{
@@ -231,6 +238,13 @@ template<typename T>
 						++ptr;
 					}
 				}
+			}
+			else
+			{
+				// Expression returned a single float value?
+				// We'll assume it's intended to be interpreted as a vector
+				if constexpr(udm::is_vector_type<T>)
+					inOutValue = T{static_cast<T::value_type>(floatVal)};
 			}
 		}
 	}
