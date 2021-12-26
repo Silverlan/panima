@@ -108,7 +108,7 @@ template<typename T>
 	if constexpr(std::is_same_v<T,Vector3>)
 		return &uvec::lerp;
 	else if constexpr(std::is_same_v<T,Quat>)
-		return &uquat::lerp; // TODO: Maybe use slerp? Test performance!
+		return &uquat::slerp;
 	else if constexpr(std::is_same_v<T,Vector2i> || std::is_same_v<T,Vector3i> || std::is_same_v<T,Vector4i>)
 	{
 		using Tf = std::conditional_t<std::is_same_v<T,Vector2i>,Vector2,std::conditional_t<std::is_same_v<T,Vector3i>,Vector3,Vector4>>;
