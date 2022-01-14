@@ -60,6 +60,7 @@ namespace panima
 		const panima::Player &GetPlayer() const {return const_cast<AnimationManager*>(this)->GetPlayer();}
 
 		std::vector<ChannelValueSubmitter> &GetChannelValueSubmitters() {return m_channelValueSubmitters;}
+		const std::vector<ChannelValueSubmitter> &GetChannelValueSubmitters() const {return const_cast<AnimationManager*>(this)->GetChannelValueSubmitters();}
 
 		void AddAnimationSet(std::string name,panima::AnimationSet &animSet);
 		const std::vector<panima::PAnimationSet> &GetAnimationSets() const {return m_animationSets;}
