@@ -23,6 +23,14 @@ panima::Channel *panima::Animation::AddChannel(std::string path,udm::Type valueT
 	return channel;
 }
 
+void panima::Animation::RemoveChannel(std::string path)
+{
+	auto it = FindChannelIt(std::move(path));
+	if(it == m_channels.end())
+		return;
+	m_channels.erase(it);
+}
+
 void panima::Animation::AddChannel(Channel &channel)
 {
 	auto it = std::find_if(m_channels.begin(),m_channels.end(),[&channel](const std::shared_ptr<Channel> &channelOther) {
@@ -36,12 +44,17 @@ void panima::Animation::AddChannel(Channel &channel)
 	m_channels.push_back(channel.shared_from_this());
 }
 
-panima::Channel *panima::Animation::FindChannel(std::string path)
+std::vector<std::shared_ptr<panima::Channel>>::iterator panima::Animation::FindChannelIt(std::string path)
 {
 	ChannelPath channelPath {std::move(path)};
-	auto it = std::find_if(m_channels.begin(),m_channels.end(),[&channelPath](const std::shared_ptr<Channel> &channel) {
+	return std::find_if(m_channels.begin(),m_channels.end(),[&channelPath](const std::shared_ptr<Channel> &channel) {
 		return channel->targetPath == channelPath;
 	});
+}
+
+panima::Channel *panima::Animation::FindChannel(std::string path)
+{
+	auto it = FindChannelIt(std::move(path));
 	if(it == m_channels.end())
 		return nullptr;
 	return it->get();

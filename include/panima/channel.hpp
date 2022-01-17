@@ -148,6 +148,7 @@ namespace panima
 		{
 			return DoApplyValueExpression<T>(time,timeIndex,inOutVal);
 		}
+		void ClearValueExpression();
 		bool SetValueExpression(std::string expression,std::string &outErr);
 		const std::string *GetValueExpression() const;
 

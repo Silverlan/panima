@@ -31,6 +31,7 @@ namespace panima
 		Animation()=default;
 		void AddChannel(Channel &channel);
 		Channel *AddChannel(std::string path,udm::Type valueType);
+		void RemoveChannel(std::string path);
 		const std::vector<std::shared_ptr<Channel>> &GetChannels() const {return const_cast<Animation*>(this)->GetChannels();}
 		std::vector<std::shared_ptr<Channel>> &GetChannels() {return m_channels;}
 		uint32_t GetChannelCount() const {return m_channels.size();}
@@ -56,6 +57,7 @@ namespace panima
 		bool operator==(const Animation &other) const {return this == &other;}
 		bool operator!=(const Animation &other) const {return !operator==(other);}
 	private:
+		std::vector<std::shared_ptr<Channel>>::iterator FindChannelIt(std::string path);
 		std::vector<std::shared_ptr<Channel>> m_channels;
 		std::string m_name;
 		float m_speedFactor = 1.f;

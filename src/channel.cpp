@@ -170,6 +170,7 @@ float panima::Channel::GetMaxTime() const
 		return 0.f;
 	return *GetTimesArray().GetBack<float>();
 }
+void panima::Channel::ClearValueExpression() {m_valueExpression = nullptr;}
 bool panima::Channel::SetValueExpression(std::string expression,std::string &outErr)
 {
 	m_valueExpression = nullptr;
