@@ -71,6 +71,7 @@ bool panima::Animation::Save(udm::LinkedPropertyWrapper &prop) const
 
 	prop["speedFactor"] = m_speedFactor;
 	prop["duration"] = m_duration;
+	prop["flags"] = udm::flags_to_string(m_flags);
 	return true;
 }
 bool panima::Animation::Load(udm::LinkedPropertyWrapper &prop)
@@ -86,6 +87,7 @@ bool panima::Animation::Load(udm::LinkedPropertyWrapper &prop)
 
 	prop["speedFactor"](m_speedFactor);
 	prop["duration"](m_duration);
+	udm::to_flags<Flags>(prop["flags"],m_flags);
 	return true;
 }
 
