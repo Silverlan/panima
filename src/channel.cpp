@@ -10,8 +10,6 @@
 #include <udm.hpp>
 #include <sharedutils/util_uri.hpp>
 
-static constexpr auto VALUE_EPSILON = 0.001f;
-
 panima::ChannelPath::ChannelPath(const std::string &ppath)
 {
 	uriparser::Uri uri {ppath};

@@ -84,6 +84,7 @@ namespace panima
 			std::vector<uint8_t> &m_values;
 		};
 
+		static constexpr auto VALUE_EPSILON = 0.001f;
 		Channel();
 		Channel(const Channel &other)=default;
 		Channel(Channel &&other)=default;
