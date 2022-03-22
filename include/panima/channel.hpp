@@ -86,6 +86,7 @@ namespace panima
 
 		static constexpr auto VALUE_EPSILON = 0.001f;
 		Channel();
+		Channel(const udm::PProperty &times,const udm::PProperty &values);
 		Channel(const Channel &other)=default;
 		Channel(Channel &&other)=default;
 		Channel &operator=(const Channel&)=default;

@@ -74,6 +74,9 @@ panima::Channel::Channel()
 {
 	GetTimesArray().SetValueType(udm::Type::Float);
 }
+panima::Channel::Channel(const udm::PProperty &times,const udm::PProperty &values)
+	: m_times{times},m_values{values}
+{}
 panima::Channel::~Channel() {}
 bool panima::Channel::Save(udm::LinkedPropertyWrapper &prop) const
 {
