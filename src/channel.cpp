@@ -69,6 +69,44 @@ std::string panima::ChannelPath::ToUri(bool includeScheme) const
 
 ////////////////
 
+panima::ArrayFloatIterator::ArrayFloatIterator(float *data)
+	: m_data{data}
+{}
+panima::ArrayFloatIterator &panima::ArrayFloatIterator::operator++()
+{
+	m_data++;
+	return *this;
+}
+panima::ArrayFloatIterator panima::ArrayFloatIterator::operator++(int)
+{
+	++m_data;
+	return *this;
+}
+panima::ArrayFloatIterator panima::ArrayFloatIterator::operator+(uint32_t n)
+{
+	m_data += n;
+	return *this;
+}
+int32_t panima::ArrayFloatIterator::operator-(const ArrayFloatIterator &other) const {return m_data -other.m_data;}
+panima::ArrayFloatIterator panima::ArrayFloatIterator::operator-(int32_t idx) const {return ArrayFloatIterator{m_data -idx};}
+panima::ArrayFloatIterator::reference panima::ArrayFloatIterator::operator*() {return *m_data;}
+const panima::ArrayFloatIterator::reference panima::ArrayFloatIterator::operator*() const {return const_cast<ArrayFloatIterator*>(this)->operator*();}
+panima::ArrayFloatIterator::pointer panima::ArrayFloatIterator::operator->() {return m_data;}
+const panima::ArrayFloatIterator::pointer panima::ArrayFloatIterator::operator->() const {return const_cast<ArrayFloatIterator*>(this)->operator->();}
+bool panima::ArrayFloatIterator::operator==(const ArrayFloatIterator &other) const {return m_data == other.m_data;}
+bool panima::ArrayFloatIterator::operator!=(const ArrayFloatIterator &other) const {return !operator==(other);}
+
+panima::ArrayFloatIterator panima::begin(const udm::Array &a)
+{
+	return ArrayFloatIterator{static_cast<float*>(&const_cast<udm::Array&>(a).GetValue<float>(0))};
+}
+panima::ArrayFloatIterator panima::end(const udm::Array &a)
+{
+	return ArrayFloatIterator{static_cast<float*>(&const_cast<udm::Array&>(a).GetValue<float>(0)) +a.GetSize()};
+}
+
+////////////////
+
 panima::Channel::Channel()
 	: m_times{::udm::Property::Create(udm::Type::ArrayLz4)},m_values{::udm::Property::Create(udm::Type::ArrayLz4)}
 {
@@ -294,53 +332,6 @@ std::pair<uint32_t,uint32_t> panima::Channel::FindInterpolationIndices(float t,f
 	return FindInterpolationIndices(t,interpFactor,pivotIndex,0u);
 }
 
-// TODO: Move this to UDM library
-class ArrayFloatIterator
-{
-public:
-	using iterator_category = std::forward_iterator_tag;
-	using value_type = float;
-	using difference_type = std::ptrdiff_t;
-	using pointer = float*;
-	using reference = float&;
-	
-	ArrayFloatIterator(float *data)
-		: m_data{data}
-	{}
-	ArrayFloatIterator &operator++()
-	{
-		m_data++;
-		return *this;
-	}
-	ArrayFloatIterator operator++(int)
-	{
-		++m_data;
-		return *this;
-	}
-	ArrayFloatIterator operator+(uint32_t n)
-	{
-		m_data += n;
-		return *this;
-	}
-	int32_t operator-(const ArrayFloatIterator &other) const {return m_data -other.m_data;}
-	ArrayFloatIterator operator-(int32_t idx) const {return ArrayFloatIterator{m_data -idx};}
-	reference operator*() {return *m_data;}
-	const reference operator*() const {return const_cast<ArrayFloatIterator*>(this)->operator*();}
-	pointer operator->() {return m_data;}
-	const pointer operator->() const {return const_cast<ArrayFloatIterator*>(this)->operator->();}
-	bool operator==(const ArrayFloatIterator &other) const {return m_data == other.m_data;}
-	bool operator!=(const ArrayFloatIterator &other) const {return !operator==(other);}
-private:
-	float *m_data = nullptr;
-};
-static ArrayFloatIterator begin(const udm::Array &a)
-{
-	return ArrayFloatIterator{static_cast<float*>(&const_cast<udm::Array&>(a).GetValue<float>(0))};
-}
-static ArrayFloatIterator end(const udm::Array &a)
-{
-	return ArrayFloatIterator{static_cast<float*>(&const_cast<udm::Array&>(a).GetValue<float>(0)) +a.GetSize()};
-}
 std::pair<uint32_t,uint32_t> panima::Channel::FindInterpolationIndices(float t,float &interpFactor) const
 {
 	auto &times = GetTimesArray();
@@ -365,6 +356,36 @@ std::pair<uint32_t,uint32_t> panima::Channel::FindInterpolationIndices(float t,f
 	auto itPrev = it -1;
 	interpFactor = (t -*itPrev) /(*it -*itPrev);
 	return {static_cast<uint32_t>(itPrev -begin(times)),static_cast<uint32_t>(it -begin(times))};
+}
+
+std::optional<size_t> panima::Channel::FindValueIndex(float time,float epsilon) const
+{
+	auto &t = GetTimesArray();
+	auto size = t.GetSize();
+	if(size == 0)
+		return {};
+	float interpFactor;
+	auto indices = FindInterpolationIndices(time,interpFactor);
+	if(indices.first == std::numeric_limits<decltype(indices.first)>::max())
+		return {};
+	if(interpFactor == 0.f && indices.first == indices.second)
+	{
+		if(
+			indices.first == 0 &&
+			umath::abs(t.GetValue<float>(0) -time) >= epsilon
+		)
+			return {};
+		if(
+			indices.first == size -1 &&
+			umath::abs(t.GetValue<float>(size -1) -time) >= epsilon
+		)
+			return {};
+	}
+	if(interpFactor < epsilon)
+		return indices.first;
+	if(interpFactor > 1.f -epsilon)
+		return indices.second;
+	return {};
 }
 
 uint32_t panima::Channel::GetTimeCount() const {return GetTimesArray().GetSize();}

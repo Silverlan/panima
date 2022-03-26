@@ -123,6 +123,7 @@ namespace panima
 
 		std::pair<uint32_t,uint32_t> FindInterpolationIndices(float t,float &outInterpFactor,uint32_t pivotIndex) const;
 		std::pair<uint32_t,uint32_t> FindInterpolationIndices(float t,float &outInterpFactor) const;
+		std::optional<size_t> FindValueIndex(float time,float epsilon=panima::Channel::VALUE_EPSILON) const;
 		template<typename T>
 			bool IsValueType() const;
 		template<typename T>
@@ -176,6 +177,33 @@ namespace panima
 		TimeFrame m_timeFrame {};
 		TimeFrame m_effectiveTimeFrame {};
 	};
+
+	class ArrayFloatIterator
+	{
+	public:
+		using iterator_category = std::forward_iterator_tag;
+		using value_type = float;
+		using difference_type = std::ptrdiff_t;
+		using pointer = float*;
+		using reference = float&;
+	
+		ArrayFloatIterator(float *data);
+		ArrayFloatIterator &operator++();
+		ArrayFloatIterator operator++(int);
+		ArrayFloatIterator operator+(uint32_t n);
+		int32_t operator-(const ArrayFloatIterator &other) const;
+		ArrayFloatIterator operator-(int32_t idx) const;
+		reference operator*();
+		const reference operator*() const;
+		pointer operator->();
+		const pointer operator->() const;
+		bool operator==(const ArrayFloatIterator &other) const;
+		bool operator!=(const ArrayFloatIterator &other) const;
+	private:
+		float *m_data = nullptr;
+	};
+	ArrayFloatIterator begin(const udm::Array &a);
+	ArrayFloatIterator end(const udm::Array &a);
 };
 
 std::ostream &operator<<(std::ostream &out,const panima::Channel &o);
