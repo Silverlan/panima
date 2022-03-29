@@ -263,6 +263,17 @@ uint32_t panima::Channel::AddValue(float t,const void *value)
 	auto &values = GetValueArray();
 	if(indices.first == indices.second)
 	{
+		if(indices.first == 0 && t < times.GetValue<float>(0))
+		{
+			// New time value preceeds first time value in time array, push front
+			auto idx = indices.first;
+			times.InsertValue(idx,t);
+			udm::visit_ng(GetValueType(),[&values,idx,value](auto tag) {
+				using T = decltype(tag)::type;
+				values.InsertValue(idx,*static_cast<const T*>(value));
+			});
+			return idx;
+		}
 		// New time value exceeds last time value in time array, push back
 		auto idx = indices.second +1;
 		times.InsertValue(idx,t);
