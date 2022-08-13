@@ -9,6 +9,7 @@
 #include "panima/animation_set.hpp"
 #include "panima/animation.hpp"
 #include "panima/player.hpp"
+//#include <type_traits>
 
 std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(const AnimationManager &other)
 {
@@ -26,17 +27,17 @@ panima::AnimationManager::AnimationManager(const AnimationManager &other)
 	: m_player{panima::Player::Create(*other.m_player)},m_animationSets{other.m_animationSets},m_currentAnimation{other.m_currentAnimation},
 	m_setNameToIndex{other.m_setNameToIndex},m_currentAnimationSet{other.m_currentAnimationSet},m_prevAnimSlice{other.m_prevAnimSlice}/*,m_channelValueSubmitters{m_channelValueSubmitters}*/
 {
-    //https://stackoverflow.com/questions/17598595/is-sizeof-class-guaranteed-to-contain-size-of-elements-only
-    //https://www.quora.com/How-do-I-determine-the-size-of-an-object-in-C++
-    //This assertion may be ill formed...
-    //TODO: Store last result of sizeof here
-	static_assert(sizeof(*this) == 384,"Update this implementation when class has changed!");
+#ifdef _MSC_VER
+    static_assert(sizeof(*this)  == 384,"Update this implementation when class has changed!");
+#endif
 }
 panima::AnimationManager::AnimationManager(AnimationManager &&other)
 	: m_player{panima::Player::Create(*other.m_player)},m_animationSets{std::move(other.m_animationSets)},m_currentAnimation{other.m_currentAnimation},
-	m_setNameToIndex{std::move(other.m_setNameToIndex)},m_currentAnimationSet{other.m_currentAnimationSet},m_prevAnimSlice{std::move(other.m_prevAnimSlice)}/*,m_channelValueSubmitters{std::move(m_channelValueSubmitters)}*/
+    m_setNameToIndex{std::move(other.m_setNameToIndex)},m_currentAnimationSet{other.m_currentAnimationSet},m_prevAnimSlice{std::move(other.m_prevAnimSlice)}/*,m_channelValueSubmitters{std::move(m_channelValueSubmitters)}*/
 {
-	static_assert(sizeof(*this) == 384,"Update this implementation when class has changed!");
+#ifdef _MSC_VER
+            static_assert(sizeof(*this)  == 384,"Update this implementation when class has changed!");
+#endif
 }
 panima::AnimationManager::AnimationManager()
 	: m_player{panima::Player::Create()}
@@ -50,8 +51,10 @@ panima::AnimationManager &panima::AnimationManager::operator=(const AnimationMan
 	m_setNameToIndex = other.m_setNameToIndex;
 
 	m_prevAnimSlice = other.m_prevAnimSlice;
-	// m_channelValueSubmitters = other.m_channelValueSubmitters;
-	static_assert(sizeof(*this) == 384,"Update this implementation when class has changed!");
+    // m_channelValueSubmitters = other.m_channelValueSubmitters;
+#ifdef _MSC_VER
+    static_assert(sizeof(*this)  == 384,"Update this implementation when class has changed!");
+#endif
 	return *this;
 }
 panima::AnimationManager &panima::AnimationManager::operator=(AnimationManager &&other)
@@ -64,7 +67,10 @@ panima::AnimationManager &panima::AnimationManager::operator=(AnimationManager &
 
 	m_prevAnimSlice = std::move(other.m_prevAnimSlice);
 	// m_channelValueSubmitters = std::move(other.m_channelValueSubmitters);
-	static_assert(sizeof(*this) == 384,"Update this implementation when class has changed!");
+
+#ifdef _MSC_VER
+    static_assert(sizeof(*this)  == 384,"Update this implementation when class has changed!");
+#endif
 	return *this;
 }
 
