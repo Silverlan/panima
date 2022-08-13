@@ -163,10 +163,7 @@ bool panima::expression::ValueExpression::Initialize(udm::Type type,std::string 
 	return true;
 }
 
-panima::expression::ValueExpression::~ValueExpression()
-{
-	expr.f_valueAt = nullptr;
-}
+//panima::expression::ValueExpression::~ValueExpression()
 
 template<typename T>
 	void panima::expression::ValueExpression::DoApply(double time,uint32_t timeIndex,const TimeFrame &timeFrame,T &inOutValue)

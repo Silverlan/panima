@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #include <functional>
+#include <limits>
 #include <udm_types.hpp>
 
 namespace panima

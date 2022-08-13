@@ -26,6 +26,10 @@ panima::AnimationManager::AnimationManager(const AnimationManager &other)
 	: m_player{panima::Player::Create(*other.m_player)},m_animationSets{other.m_animationSets},m_currentAnimation{other.m_currentAnimation},
 	m_setNameToIndex{other.m_setNameToIndex},m_currentAnimationSet{other.m_currentAnimationSet},m_prevAnimSlice{other.m_prevAnimSlice}/*,m_channelValueSubmitters{m_channelValueSubmitters}*/
 {
+    //https://stackoverflow.com/questions/17598595/is-sizeof-class-guaranteed-to-contain-size-of-elements-only
+    //https://www.quora.com/How-do-I-determine-the-size-of-an-object-in-C++
+    //This assertion may be ill formed...
+    //TODO: Store last result of sizeof here
 	static_assert(sizeof(*this) == 384,"Update this implementation when class has changed!");
 }
 panima::AnimationManager::AnimationManager(AnimationManager &&other)

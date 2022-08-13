@@ -81,7 +81,16 @@ foreach(def IN LISTS DEFINITIONS)
 endforeach(def)
 
 # Required for exprtk
-add_definitions(/bigobj)
+
+include(CheckCXXCompilerFlag)
+if (MSVC)
+  add_compile_options(/bigobj)
+else ()
+  check_cxx_compiler_flag("-Wa,-mbig-obj" EXPRTK_HAS_MBIG_OBJ)
+  if (${EXPRTK_HAS_MBIG_OBJ})
+      add_compile_options(-Wa,-mbig-obj)
+  endif()
+endif ()
 
 function(def_vs_filters FILE_LIST)
 	foreach(source IN LISTS FILE_LIST)
