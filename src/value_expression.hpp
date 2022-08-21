@@ -11,6 +11,8 @@
 #include <mathutil/perlin_noise.hpp>
 #include <udm.hpp>
 
+
+#include <utility>
 namespace panima
 {
 	struct Channel;
@@ -43,16 +45,16 @@ namespace panima
 		constexpr bool is_supported_expression_type(udm::Type type)
 		{
 			return udm::visit(type,[](auto tag) {
-				return is_supported_expression_type_v<decltype(tag)::type>;
+                return is_supported_expression_type_v<typename decltype(tag)::type>;
 			});
 		}
 
 		template <typename T,T(*TEval)(const T&)>
-			struct ExprFuncGeneric1Param : public exprtk::ifunction<T>
+            struct ExprFuncGeneric1Param : public exprtk::ifunction<T>
 		{
 			using exprtk::ifunction<T>::operator();
 
-			ExprFuncGeneric1Param()
+            ExprFuncGeneric1Param()
 				: exprtk::ifunction<T>(1)
 			{ exprtk::disable_has_side_effects(*this); }
 
@@ -165,7 +167,7 @@ namespace panima
 			ExprScalar operator()(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters) override;
 		};
 
-		template<typename T,T(*TEval)(exprtk::igeneric_function<T>::parameter_list_t)>
+        template<typename T,T(*TEval)(typename exprtk::igeneric_function<T>::parameter_list_t)>
 		struct ExprFuncGeneric : public exprtk::igeneric_function<T>
 		{
 			using exprtk::igeneric_function<T>::operator();
@@ -174,7 +176,7 @@ namespace panima
 				: exprtk::igeneric_function<T>{}
 			{}
 
-			inline T operator()(exprtk::igeneric_function<T>::parameter_list_t parameters)
+            inline T operator()(typename exprtk::igeneric_function<T>::parameter_list_t parameters)
 			{
 				return TEval(parameters);
 			}
@@ -189,9 +191,9 @@ namespace panima
 				: exprtk::igeneric_function<T>{}
 			{}
 
-			inline T operator()(exprtk::igeneric_function<T>::parameter_list_t parameters)
+            inline T operator()(typename exprtk::igeneric_function<T>::parameter_list_t parameters)
 			{
-				using generic_type = exprtk::igeneric_function<T>::generic_type;
+                using generic_type = typename exprtk::igeneric_function<T>::generic_type;
 				for(std::size_t i = 0; i < parameters.size(); ++i)
 				{
 					if(i > 0)
@@ -242,10 +244,7 @@ namespace panima
 			ValueExpression(Channel &channel)
 				: channel{channel}
 			{}
-            ~ValueExpression()
-            {
-                expr.f_valueAt = nullptr;
-            };
+            ~ValueExpression();
 			Channel &channel;
 			std::string expression;
 			struct {

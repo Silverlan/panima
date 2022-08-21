@@ -110,7 +110,7 @@ namespace panima
 		template<typename T>
 			IteratorWrapper<T> It();
 		template<typename T>
-			IteratorWrapper<T> It() const {return const_cast<Channel*>(this)->It();}
+            IteratorWrapper<T> It() const {return const_cast<Channel*>(this)->It<T>();}
 		template<typename T>
 			T &GetValue(uint32_t idx);
 		template<typename T>

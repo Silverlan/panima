@@ -38,7 +38,9 @@ panima::Skeleton::Skeleton(const Skeleton &other)
 		}
 	};
 	fUpdateHierarchy(m_rootBones,nullptr);
+#ifdef _MSC_VER
 	static_assert(sizeof(Skeleton) == 112,"Update this function when making changes to this class!");
+#endif
 }
 
 bool panima::Skeleton::IsRootBone(uint32_t boneId) const
@@ -82,7 +84,9 @@ std::weak_ptr<panima::Bone> panima::Skeleton::GetBone(uint32_t id) const
 
 bool panima::Skeleton::operator==(const Skeleton &other) const
 {
-	static_assert(sizeof(Skeleton) == 112,"Update this function when making changes to this class!");
+#ifdef _MSC_VER
+            static_assert(sizeof(Skeleton) == 112,"Update this function when making changes to this class!");
+#endif
 	if(!(m_bones.size() == other.m_bones.size() && m_rootBones.size() == other.m_rootBones.size()))
 		return false;
 	for(auto i=decltype(m_bones.size()){0u};i<m_bones.size();++i)
