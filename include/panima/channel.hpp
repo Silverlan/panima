@@ -87,9 +87,9 @@ namespace panima
 		static constexpr auto VALUE_EPSILON = 0.001f;
 		Channel();
 		Channel(const udm::PProperty &times,const udm::PProperty &values);
-		Channel(const Channel &other)=default;
+        //Channel(const Channel &other)=default;
 		Channel(Channel &&other)=default;
-		Channel &operator=(const Channel&)=default;
+        //Channel &operator=(const Channel&)=default;
 		Channel &operator=(Channel&&)=default;
 		~Channel();
 		ChannelInterpolation interpolation = ChannelInterpolation::Linear;
@@ -125,11 +125,11 @@ namespace panima
 		std::pair<uint32_t,uint32_t> FindInterpolationIndices(float t,float &outInterpFactor) const;
 		std::optional<size_t> FindValueIndex(float time,float epsilon=panima::Channel::VALUE_EPSILON) const;
 		template<typename T>
-			bool IsValueType() const;
+            bool IsValueType() const;
+        template<typename T>
+            IteratorWrapper<T> It();
 		template<typename T>
-			IteratorWrapper<T> It();
-		template<typename T>
-			IteratorWrapper<T> It() const {return const_cast<Channel*>(this)->It();}
+            IteratorWrapper<T> It() const {return const_cast<Channel*>(this)->It<T>();}
 		template<typename T>
 			T &GetValue(uint32_t idx);
 		template<typename T>
@@ -173,7 +173,7 @@ namespace panima
 		std::pair<uint32_t,uint32_t> FindInterpolationIndices(float t,float &outInterpFactor,uint32_t pivotIndex,uint32_t recursionDepth) const;
 		udm::PProperty m_times = nullptr;
 		udm::PProperty m_values = nullptr;
-		std::unique_ptr<expression::ValueExpression> m_valueExpression = nullptr;
+        std::unique_ptr<expression::ValueExpression> m_valueExpression; //default constructor is sufficient
 		TimeFrame m_timeFrame {};
 		TimeFrame m_effectiveTimeFrame {};
 	};

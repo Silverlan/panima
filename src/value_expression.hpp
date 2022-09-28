@@ -242,7 +242,10 @@ namespace panima
 			ValueExpression(Channel &channel)
 				: channel{channel}
 			{}
-			~ValueExpression();
+            ~ValueExpression()
+            {
+                expr.f_valueAt = nullptr;
+            };
 			Channel &channel;
 			std::string expression;
 			struct {
@@ -275,4 +278,29 @@ namespace panima
 	};
 };
 
+
+//Fixed bug: value_expression.cpp defines all of these for common use, but no one used them, making instead their own versions.
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Int8&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::UInt8&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Int16&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::UInt16&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Int32&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::UInt32&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Int64&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::UInt64&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Float&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Double&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Boolean&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector2&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector3&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector4&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Quaternion&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::EulerAngles&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Srgba&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::HdrColor&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Mat4&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Mat3x4&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector2i&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector3i&);
+extern template void panima::expression::ValueExpression::DoApply(double,uint32_t,const TimeFrame&,udm::Vector4i&);
 #endif
