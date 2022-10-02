@@ -53,7 +53,7 @@ static panima::expression::ExprScalar ramp(const panima::expression::ExprScalar 
 		return a;
 	return (x -a) /(b -a);
 }
-static panima::expression::ExprScalar lerp(const panima::expression::ExprScalar &x,const panima::expression::ExprScalar &a,const panima::expression::ExprScalar &b)
+static panima::expression::ExprScalar expr_lerp(const panima::expression::ExprScalar &x,const panima::expression::ExprScalar &a,const panima::expression::ExprScalar &b)
 {
 	return a +(b -a) *x;
 }
@@ -62,11 +62,17 @@ static panima::expression::ExprScalar rescale(
 	const panima::expression::ExprScalar &Ya,const panima::expression::ExprScalar &Yb
 )
 {
-	return lerp(ramp(X,Xa,Xb),Ya,Yb);
+    return expr_lerp(ramp(X,Xa,Xb),Ya,Yb);
 }
 
 namespace panima::expression
 {
+	static ExprScalar sqr(const ExprScalar &v) {return v *v;}
+	static ExprScalar cramp(const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) {return umath::clamp(ramp(v1,v2,v3),ExprScalar{0},ExprScalar{1});}
+    static ExprScalar clerp(const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) {return umath::clamp(expr_lerp(v1,v2,v3),v2,v3);}
+	static ExprScalar elerp(const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) {return ramp(3 *v1 *v1 -2 *v1 *v1 *v1,v2,v3);}
+	static ExprScalar crescale(const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3,const ExprScalar &v4,const ExprScalar &v5) {return umath::clamp(rescale(v1,v2,v3,v4,v5),v4,v5);}
+
 	extern exprtk::symbol_table<ExprScalar> &get_quaternion_symbol_table();
 	static exprtk::symbol_table<ExprScalar> &get_base_symbol_table()
 	{
@@ -76,14 +82,14 @@ namespace panima::expression
 			return symTable;
 		initialized = true;
 
-		static ExprFuncGeneric1Param<ExprScalar,[](const ExprScalar &v) -> ExprScalar {return v *v;}> f_sqr {};
+		static ExprFuncGeneric1Param<ExprScalar,sqr> f_sqr {};
 		static ExprFuncGeneric3Param<ExprScalar,ramp> f_ramp {};
-		static ExprFuncGeneric3Param<ExprScalar,[](const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) -> ExprScalar {return umath::clamp(ramp(v1,v2,v3),ExprScalar{0},ExprScalar{1});}> f_cramp {};
-		static ExprFuncGeneric3Param<ExprScalar,lerp> f_lerp {};
-		static ExprFuncGeneric3Param<ExprScalar,[](const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) -> ExprScalar {return umath::clamp(lerp(v1,v2,v3),v2,v3);}> f_clerp {};
-		static ExprFuncGeneric3Param<ExprScalar,[](const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3) -> ExprScalar {return ramp(3 *v1 *v1 -2 *v1 *v1 *v1,v2,v3);}> f_elerp {};
+		static ExprFuncGeneric3Param<ExprScalar,cramp> f_cramp {};
+        static ExprFuncGeneric3Param<ExprScalar,expr_lerp> f_lerp {};
+		static ExprFuncGeneric3Param<ExprScalar,clerp> f_clerp {};
+		static ExprFuncGeneric3Param<ExprScalar,elerp> f_elerp {};
 		static ExprFuncGeneric5Param<ExprScalar,rescale> f_rescale {};
-		static ExprFuncGeneric5Param<ExprScalar,[](const ExprScalar &v1,const ExprScalar &v2,const ExprScalar &v3,const ExprScalar &v4,const ExprScalar &v5) -> ExprScalar {return umath::clamp(rescale(v1,v2,v3,v4,v5),v4,v5);}> f_crescale {};
+		static ExprFuncGeneric5Param<ExprScalar,crescale> f_crescale {};
 
 		symTable.add_function("sqr",f_sqr);
 		symTable.add_function("ramp",f_ramp);
@@ -104,7 +110,7 @@ namespace panima::expression
 bool panima::expression::ValueExpression::Initialize(udm::Type type,std::string &outErr)
 {
 	auto success = udm::visit_ng(type,[this](auto tag) {
-		using T = decltype(tag)::type;
+        using T = typename decltype(tag)::type;
 		if constexpr(!is_supported_expression_type_v<T>)
 			return false;
 		else
@@ -163,7 +169,10 @@ bool panima::expression::ValueExpression::Initialize(udm::Type type,std::string 
 	return true;
 }
 
-//panima::expression::ValueExpression::~ValueExpression()
+panima::expression::ValueExpression::~ValueExpression()
+{
+    expr.f_valueAt = nullptr;
+}
 
 template<typename T>
 	void panima::expression::ValueExpression::DoApply(double time,uint32_t timeIndex,const TimeFrame &timeFrame,T &inOutValue)
@@ -199,7 +208,7 @@ template<typename T>
 				// Expression returned a single float value?
 				// We'll assume it's intended to be interpreted as a vector
 				if constexpr(udm::is_vector_type<T>)
-					inOutValue = T{static_cast<T::value_type>(floatVal)};
+                    inOutValue = T{static_cast<typename T::value_type>(floatVal)};
 			}
 		}
 	}
@@ -241,7 +250,7 @@ template<typename T>
 				// Expression returned a single float value?
 				// We'll assume it's intended to be interpreted as a vector
 				if constexpr(udm::is_vector_type<T>)
-					inOutValue = T{static_cast<T::value_type>(floatVal)};
+                    inOutValue = T{static_cast<typename T::value_type>(floatVal)};
 			}
 		}
 	}

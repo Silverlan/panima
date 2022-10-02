@@ -269,7 +269,7 @@ uint32_t panima::Channel::AddValue(float t,const void *value)
 			auto idx = indices.first;
 			times.InsertValue(idx,t);
 			udm::visit_ng(GetValueType(),[&values,idx,value](auto tag) {
-				using T = decltype(tag)::type;
+                using T = typename decltype(tag)::type;
 				values.InsertValue(idx,*static_cast<const T*>(value));
 			});
 			return idx;
@@ -278,7 +278,7 @@ uint32_t panima::Channel::AddValue(float t,const void *value)
 		auto idx = indices.second +1;
 		times.InsertValue(idx,t);
 		udm::visit_ng(GetValueType(),[&values,idx,value](auto tag) {
-			using T = decltype(tag)::type;
+            using T = typename decltype(tag)::type;
 			values.InsertValue(idx,*static_cast<const T*>(value));
 		});
 		return idx;
@@ -287,7 +287,7 @@ uint32_t panima::Channel::AddValue(float t,const void *value)
 	auto idx = indices.second;
 	times.InsertValue(idx,t);
 	udm::visit_ng(GetValueType(),[&values,idx,value](auto tag) {
-		using T = decltype(tag)::type;
+        using T = typename decltype(tag)::type;
 		values.InsertValue(idx,*static_cast<const T*>(value));
 	});
 	return idx;

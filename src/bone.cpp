@@ -16,7 +16,9 @@ panima::Bone::Bone(const Bone &other)
 {
 	for(auto &pair : other.children)
 		children[pair.first] = std::make_shared<Bone>(*pair.second);
+#ifdef _MSC_VER
 	static_assert(sizeof(Bone) == 136,"Update this function when making changes to this class!");
+#endif
 }
 
 bool panima::Bone::IsAncestorOf(const Bone &other) const
@@ -29,7 +31,9 @@ bool panima::Bone::IsAncestorOf(const Bone &other) const
 bool panima::Bone::IsDescendantOf(const Bone &other) const {return other.IsAncestorOf(*this);}
 bool panima::Bone::operator==(const Bone &other) const
 {
-	static_assert(sizeof(Bone) == 136,"Update this function when making changes to this class!");
+#ifdef _MSC_VER
+    static_assert(sizeof(Bone) == 136,"Update this function when making changes to this class!");
+#endif
 	if(!(name == other.name && ID == other.ID && children.size() == other.children.size() && parent.expired() == other.parent.expired()))
 		return false;
 	for(auto &pair : children)
