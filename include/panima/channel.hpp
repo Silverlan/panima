@@ -6,6 +6,7 @@
 #define __PANIMA_CHANNEL_HPP__
 
 #include "panima/expression.hpp"
+#include "panima/types.hpp"
 #include <sharedutils/util_path.hpp>
 #include <udm_types.hpp>
 
@@ -14,20 +15,6 @@ namespace panima
 	constexpr std::string_view ANIMATION_CHANNEL_PATH_POSITION = "position";
 	constexpr std::string_view ANIMATION_CHANNEL_PATH_ROTATION = "rotation";
 	constexpr std::string_view ANIMATION_CHANNEL_PATH_SCALE = "scale";
-
-	enum class ChannelInterpolation : uint8_t
-	{
-		Linear = 0,
-		Step,
-		CubicSpline
-	};
-
-	struct TimeFrame
-	{
-		float startOffset = 0.f;
-		float scale = 1.f;
-		float duration = -1.f;
-	};
 
 	// Example URI: panima:ec/color/color?components=red,blue
 	struct ChannelPath
