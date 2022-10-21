@@ -24,6 +24,20 @@ namespace panima
 
 		Default = None
 	};
+
+	enum class ChannelInterpolation : uint8_t
+	{
+		Linear = 0,
+		Step,
+		CubicSpline
+	};
+
+	struct TimeFrame
+	{
+		float startOffset = 0.f;
+		float scale = 1.f;
+		float duration = -1.f;
+	};
 	
 	using AnimationId = uint32_t;
 	constexpr auto INVALID_ANIMATION = std::numeric_limits<AnimationId>::max();
