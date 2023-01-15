@@ -35,6 +35,7 @@ namespace panima
 		const std::vector<std::shared_ptr<Channel>> &GetChannels() const {return const_cast<Animation*>(this)->GetChannels();}
 		std::vector<std::shared_ptr<Channel>> &GetChannels() {return m_channels;}
 		uint32_t GetChannelCount() const {return m_channels.size();}
+		void Merge(const Animation &other);
 
 		bool Save(udm::LinkedPropertyWrapper &prop) const;
 		bool Load(udm::LinkedPropertyWrapper &prop);

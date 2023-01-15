@@ -12,7 +12,9 @@
 #include <iostream>
 #include <functional>
 #include <limits>
+#include <sharedutils/magic_enum.hpp>
 #include <udm_types.hpp>
+#include <udm_trivial_types.hpp>
 
 namespace panima
 {
@@ -62,6 +64,13 @@ namespace panima
 	using ChannelValueSubmitter = std::function<void(Channel&,uint32_t&,double)>;
 
 	struct ChannelPath;
+
+	constexpr bool is_animatable_type(udm::Type type)
+	{
+		return !udm::is_non_trivial_type(type) && type != udm::Type::HdrColor && type != udm::Type::Srgba &&
+			type != udm::Type::Transform && type != udm::Type::ScaledTransform && type != udm::Type::Nil &&
+			type != udm::Type::Half;
+	}
 };
 
 #endif

@@ -6,6 +6,7 @@
  */
 
 #include "panima/channel.hpp"
+#include "panima/channel_t.hpp"
 #include "value_expression.hpp"
 #include <udm.hpp>
 #include <sharedutils/util_uri.hpp>
@@ -211,6 +212,78 @@ float panima::Channel::GetMaxTime() const
 	if(GetTimeCount() == 0)
 		return 0.f;
 	return *GetTimesArray().GetBack<float>();
+}
+void panima::Channel::MergeValues(const Channel &other)
+{
+	if(!udm::is_convertible(other.GetValueType(),GetValueType()))
+		return;
+	auto startTime = other.GetMinTime();
+	auto endTime = other.GetMaxTime();
+	if(!ClearRange(startTime,endTime))
+		return;
+	auto indicesStart = FindInterpolationIndices(startTime,startTime);
+	auto startIdx = indicesStart.second;
+	if(startIdx == std::numeric_limits<uint32_t>::max())
+	{
+		if(!GetTimesArray().IsEmpty())
+			return;
+		startIdx = 0;
+	}
+	auto &times = GetTimesArray();
+	auto &timesOther = other.GetTimesArray();
+	auto &values = GetValueArray();
+	auto &valuesOther = other.GetValueArray();
+	times.AddValueRange(startIdx,other.GetValueCount());
+	values.AddValueRange(startIdx,other.GetValueCount());
+	memcpy(times.GetValuePtr(startIdx),const_cast<udm::Array&>(other.GetTimesArray()).GetValuePtr(0),timesOther.GetSize() *timesOther.GetValueSize());
+	if(other.GetValueType() == GetValueType())
+	{
+		// Same value type, just copy
+		memcpy(values.GetValuePtr(startIdx),const_cast<udm::Array&>(other.GetValueArray()).GetValuePtr(0),valuesOther.GetSize() *valuesOther.GetValueSize());
+		return;
+	}
+	// Values have to be converted
+	udm::visit_ng(GetValueType(),[this,&other,startIdx,&values,&valuesOther](auto tag) {
+        using T = typename decltype(tag)::type;
+		udm::visit_ng(other.GetValueType(),[this,&other,startIdx,&values,&valuesOther](auto tag) {
+			using TOther = typename decltype(tag)::type;
+			if constexpr(udm::is_convertible<TOther,T>())
+			{
+				auto n = other.GetValueCount();
+				for(auto i=decltype(n){0u};i<n;++i)
+					values.GetValue<T>(startIdx +i) = udm::convert<TOther,T>(valuesOther.GetValue<TOther>(i));
+			}
+		});
+	});
+}
+bool panima::Channel::ClearRange(float startTime,float endTime)
+{
+	if(GetTimesArray().IsEmpty())
+		return true;
+	float t;
+	auto indicesStart = FindInterpolationIndices(startTime,t);
+	auto indicesEnd = FindInterpolationIndices(endTime,t);
+	auto startIdx = indicesStart.second;
+	auto endIdx = indicesEnd.first;
+	if(startIdx == std::numeric_limits<uint32_t>::max() || endIdx == std::numeric_limits<uint32_t>::max() || endIdx < startIdx)
+		return false;
+	udm::visit_ng(GetValueType(),[this,startTime,endTime,startIdx,endIdx](auto tag) {
+        using T = typename decltype(tag)::type;
+		if constexpr(is_animatable_type(udm::type_to_enum<T>()))
+		{
+			auto startVal = GetInterpolatedValue<T>(startTime);
+			auto endVal = GetInterpolatedValue<T>(endTime);
+
+			auto &times = GetTimesArray();
+			auto &values = GetValueArray();
+			times.RemoveValueRange(startIdx,(endIdx -startIdx) +1);
+			values.RemoveValueRange(startIdx,(endIdx -startIdx) +1);
+
+			AddValue<T>(startTime,startVal);
+			AddValue<T>(endTime,endVal);
+		}
+	});
+	return true;
 }
 void panima::Channel::ClearValueExpression() {m_valueExpression = nullptr;}
 bool panima::Channel::SetValueExpression(std::string expression,std::string &outErr)

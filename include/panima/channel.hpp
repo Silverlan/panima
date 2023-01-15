@@ -98,6 +98,8 @@ namespace panima
 		uint32_t GetTimeCount() const;
 		uint32_t GetValueCount() const;
 		std::optional<float> GetTime(uint32_t idx) const;
+		bool ClearRange(float startTime,float endTime);
+		void MergeValues(const Channel &other);
 
 		bool Save(udm::LinkedPropertyWrapper &prop) const;
 		bool Load(udm::LinkedPropertyWrapper &prop);

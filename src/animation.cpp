@@ -60,6 +60,19 @@ panima::Channel *panima::Animation::FindChannel(std::string path)
 	return it->get();
 }
 
+void panima::Animation::Merge(const Animation &other)
+{
+	for(auto &channelOther : other.GetChannels())
+	{
+		auto *channel = FindChannel(channelOther->targetPath);
+		if(!channel)
+			channel = AddChannel(channelOther->targetPath,channelOther->GetValueType());
+		if(!channel)
+			continue;
+		channel->MergeValues(*channelOther);
+	}
+}
+
 bool panima::Animation::Save(udm::LinkedPropertyWrapper &prop) const
 {
 	auto udmChannels = prop.AddArray("channels",m_channels.size());
