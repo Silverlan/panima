@@ -12,15 +12,13 @@
 #include <iostream>
 #include <udm_types.hpp>
 
-namespace panima
-{
-	struct Slice
-	{
-		Slice()=default;
-		Slice(const Slice&)=default;
-		Slice(Slice &&other)=default;
-		Slice &operator=(const Slice&)=default;
-		Slice &operator=(Slice &&)=default;
+namespace panima {
+	struct Slice {
+		Slice() = default;
+		Slice(const Slice &) = default;
+		Slice(Slice &&other) = default;
+		Slice &operator=(const Slice &) = default;
+		Slice &operator=(Slice &&) = default;
 		std::vector<udm::PProperty> channelValues;
 	};
 };

@@ -12,15 +12,12 @@
 #include <optional>
 #include <sharedutils/util_path.hpp>
 
-namespace panima
-{
-	struct Bone
-		: public std::enable_shared_from_this<Bone>
-	{
+namespace panima {
+	struct Bone : public std::enable_shared_from_this<Bone> {
 		Bone();
 		Bone(const Bone &other); // Parent has to be updated by caller!
 		std::string name;
-		std::unordered_map<uint32_t,std::shared_ptr<Bone>> children;
+		std::unordered_map<uint32_t, std::shared_ptr<Bone>> children;
 		std::weak_ptr<Bone> parent;
 		BoneId ID;
 
@@ -28,10 +25,10 @@ namespace panima
 		bool IsDescendantOf(const Bone &other) const;
 
 		bool operator==(const Bone &other) const;
-		bool operator!=(const Bone &other) const {return !operator==(other);}
+		bool operator!=(const Bone &other) const { return !operator==(other); }
 	};
 };
 
-std::ostream &operator<<(std::ostream &out,const panima::Bone &o);
+std::ostream &operator<<(std::ostream &out, const panima::Bone &o);
 
 #endif
