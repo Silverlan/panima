@@ -150,6 +150,10 @@ bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data, std::string
 	m_referencePoses.resize(numBones);
 	for(auto i = decltype(udmBoneList.size()) {0u}; i < udmBoneList.size(); ++i) {
 		auto &boneInfo = udmBoneList[i];
+		if(boneInfo.index >= bones.size()) {
+			outErr = "Bone index is out of bounds of bone list!";
+			return false;
+		}
 		bones[boneInfo.index] = std::make_shared<Bone>();
 		bones[boneInfo.index]->ID = boneInfo.index;
 	}
