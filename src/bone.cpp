@@ -7,17 +7,14 @@
 
 #include "panima/bone.hpp"
 
-panima::Bone::Bone()
-	: parent(),ID(0)
-{}
+panima::Bone::Bone() : parent(), ID(0) {}
 
-panima::Bone::Bone(const Bone &other)
-	: ID(other.ID),name{other.name},parent{}
+panima::Bone::Bone(const Bone &other) : ID(other.ID), name {other.name}, parent {}
 {
 	for(auto &pair : other.children)
 		children[pair.first] = std::make_shared<Bone>(*pair.second);
 #ifdef _MSC_VER
-	static_assert(sizeof(Bone) == 136,"Update this function when making changes to this class!");
+	static_assert(sizeof(Bone) == 136, "Update this function when making changes to this class!");
 #endif
 }
 
@@ -28,33 +25,32 @@ bool panima::Bone::IsAncestorOf(const Bone &other) const
 	auto *parent = other.parent.lock().get();
 	return (parent == this) ? true : IsAncestorOf(*parent);
 }
-bool panima::Bone::IsDescendantOf(const Bone &other) const {return other.IsAncestorOf(*this);}
+bool panima::Bone::IsDescendantOf(const Bone &other) const { return other.IsAncestorOf(*this); }
 bool panima::Bone::operator==(const Bone &other) const
 {
 #ifdef _MSC_VER
-    static_assert(sizeof(Bone) == 136,"Update this function when making changes to this class!");
+	static_assert(sizeof(Bone) == 136, "Update this function when making changes to this class!");
 #endif
 	if(!(name == other.name && ID == other.ID && children.size() == other.children.size() && parent.expired() == other.parent.expired()))
 		return false;
-	for(auto &pair : children)
-	{
+	for(auto &pair : children) {
 		if(other.children.find(pair.first) == other.children.end())
 			return false;
 	}
 	return true;
 }
 
-std::ostream &operator<<(std::ostream &out,const panima::Bone &o)
+std::ostream &operator<<(std::ostream &out, const panima::Bone &o)
 {
-	out<<"Bone";
-	out<<"[Name:"<<o.name<<"]";
-	out<<"[Id:"<<o.name<<"]";
-	out<<"[Children:"<<o.children.size()<<"]";
-	out<<"[Parent:";
+	out << "Bone";
+	out << "[Name:" << o.name << "]";
+	out << "[Id:" << o.name << "]";
+	out << "[Children:" << o.children.size() << "]";
+	out << "[Parent:";
 	if(o.parent.expired())
-		out<<"NULL";
+		out << "NULL";
 	else
-		out<<o.parent.lock()->name;
-	out<<"]";
+		out << o.parent.lock()->name;
+	out << "]";
 	return out;
 }

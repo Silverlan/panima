@@ -11,37 +11,26 @@
 #include "panima/player.hpp"
 //#include <type_traits>
 
-std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(const AnimationManager &other)
-{
-	return std::shared_ptr<AnimationManager>{new AnimationManager{other}};
-}
-std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(AnimationManager &&other)
-{
-	return std::shared_ptr<AnimationManager>{new AnimationManager{std::move(other)}};
-}
-std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create()
-{
-	return std::shared_ptr<AnimationManager>{new AnimationManager{}};
-}
+std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(const AnimationManager &other) { return std::shared_ptr<AnimationManager> {new AnimationManager {other}}; }
+std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(AnimationManager &&other) { return std::shared_ptr<AnimationManager> {new AnimationManager {std::move(other)}}; }
+std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create() { return std::shared_ptr<AnimationManager> {new AnimationManager {}}; }
 panima::AnimationManager::AnimationManager(const AnimationManager &other)
-	: m_player{panima::Player::Create(*other.m_player)},m_animationSets{other.m_animationSets},m_currentAnimation{other.m_currentAnimation},
-	m_setNameToIndex{other.m_setNameToIndex},m_currentAnimationSet{other.m_currentAnimationSet},m_prevAnimSlice{other.m_prevAnimSlice}/*,m_channelValueSubmitters{m_channelValueSubmitters}*/
+    : m_player {panima::Player::Create(*other.m_player)}, m_animationSets {other.m_animationSets}, m_currentAnimation {other.m_currentAnimation}, m_setNameToIndex {other.m_setNameToIndex}, m_currentAnimationSet {other.m_currentAnimationSet}, m_prevAnimSlice {other.m_prevAnimSlice}
+/*,m_channelValueSubmitters{m_channelValueSubmitters}*/
 {
 #ifdef _MSC_VER
-    static_assert(sizeof(*this)  == 384,"Update this implementation when class has changed!");
+	static_assert(sizeof(*this) == 384, "Update this implementation when class has changed!");
 #endif
 }
 panima::AnimationManager::AnimationManager(AnimationManager &&other)
-	: m_player{panima::Player::Create(*other.m_player)},m_animationSets{std::move(other.m_animationSets)},m_currentAnimation{other.m_currentAnimation},
-    m_setNameToIndex{std::move(other.m_setNameToIndex)},m_currentAnimationSet{other.m_currentAnimationSet},m_prevAnimSlice{std::move(other.m_prevAnimSlice)}/*,m_channelValueSubmitters{std::move(m_channelValueSubmitters)}*/
+    : m_player {panima::Player::Create(*other.m_player)}, m_animationSets {std::move(other.m_animationSets)}, m_currentAnimation {other.m_currentAnimation}, m_setNameToIndex {std::move(other.m_setNameToIndex)}, m_currentAnimationSet {other.m_currentAnimationSet},
+      m_prevAnimSlice {std::move(other.m_prevAnimSlice)} /*,m_channelValueSubmitters{std::move(m_channelValueSubmitters)}*/
 {
 #ifdef _MSC_VER
-            static_assert(sizeof(*this)  == 384,"Update this implementation when class has changed!");
+	static_assert(sizeof(*this) == 384, "Update this implementation when class has changed!");
 #endif
 }
-panima::AnimationManager::AnimationManager()
-	: m_player{panima::Player::Create()}
-{}
+panima::AnimationManager::AnimationManager() : m_player {panima::Player::Create()} {}
 panima::AnimationManager &panima::AnimationManager::operator=(const AnimationManager &other)
 {
 	m_player = panima::Player::Create(*other.m_player);
@@ -51,9 +40,9 @@ panima::AnimationManager &panima::AnimationManager::operator=(const AnimationMan
 	m_setNameToIndex = other.m_setNameToIndex;
 
 	m_prevAnimSlice = other.m_prevAnimSlice;
-    // m_channelValueSubmitters = other.m_channelValueSubmitters;
+	// m_channelValueSubmitters = other.m_channelValueSubmitters;
 #ifdef _MSC_VER
-    static_assert(sizeof(*this)  == 384,"Update this implementation when class has changed!");
+	static_assert(sizeof(*this) == 384, "Update this implementation when class has changed!");
 #endif
 	return *this;
 }
@@ -69,12 +58,12 @@ panima::AnimationManager &panima::AnimationManager::operator=(AnimationManager &
 	// m_channelValueSubmitters = std::move(other.m_channelValueSubmitters);
 
 #ifdef _MSC_VER
-    static_assert(sizeof(*this)  == 384,"Update this implementation when class has changed!");
+	static_assert(sizeof(*this) == 384, "Update this implementation when class has changed!");
 #endif
 	return *this;
 }
 
-panima::Animation *panima::AnimationManager::GetCurrentAnimation() const {return const_cast<panima::Animation*>(m_player->GetAnimation());}
+panima::Animation *panima::AnimationManager::GetCurrentAnimation() const { return const_cast<panima::Animation *>(m_player->GetAnimation()); }
 
 void panima::AnimationManager::RemoveAnimationSet(const std::string_view &name)
 {
@@ -85,25 +74,24 @@ void panima::AnimationManager::RemoveAnimationSet(const std::string_view &name)
 	auto &set = m_animationSets[idx];
 	if(m_currentAnimationSet.lock().get() == set.get())
 		StopAnimation();
-	m_animationSets.erase(m_animationSets.begin() +idx);
+	m_animationSets.erase(m_animationSets.begin() + idx);
 	m_setNameToIndex.erase(it);
 }
-void panima::AnimationManager::AddAnimationSet(std::string name,panima::AnimationSet &animSet)
+void panima::AnimationManager::AddAnimationSet(std::string name, panima::AnimationSet &animSet)
 {
 	RemoveAnimationSet(name);
 	m_animationSets.push_back(animSet.shared_from_this());
-	m_setNameToIndex[name] = m_animationSets.size() -1;
+	m_setNameToIndex[name] = m_animationSets.size() - 1;
 }
 
-void panima::AnimationManager::PlayAnimation(const std::string &animation,PlaybackFlags flags)
+void panima::AnimationManager::PlayAnimation(const std::string &animation, PlaybackFlags flags)
 {
-	auto p = FindAnimation(animation,flags);
-	if(p.first == INVALID_ANIMATION_SET_INDEX)
-	{
+	auto p = FindAnimation(animation, flags);
+	if(p.first == INVALID_ANIMATION_SET_INDEX) {
 		StopAnimation();
 		return;
 	}
-	PlayAnimation(p.first,p.second,flags);
+	PlayAnimation(p.first, p.second, flags);
 }
 
 panima::AnimationSet *panima::AnimationManager::GetAnimationSet(AnimationSetIndex idx)
@@ -121,16 +109,16 @@ panima::AnimationSet *panima::AnimationManager::FindAnimationSet(const std::stri
 	return m_animationSets[it->second].get();
 }
 
-panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(AnimationSetIndex animSetIndex,panima::AnimationId animation,PlaybackFlags flags) const
+panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(AnimationSetIndex animSetIndex, panima::AnimationId animation, PlaybackFlags flags) const
 {
 	auto *set = GetAnimationSet(animSetIndex);
 	if(!set)
 		return INVALID_ANIMATION_REFERENCE;
 	if(m_callbackInterface.translateAnimation)
-		m_callbackInterface.translateAnimation(*set,animation,flags);
-	return {animSetIndex,animation};
+		m_callbackInterface.translateAnimation(*set, animation, flags);
+	return {animSetIndex, animation};
 }
-panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(AnimationSetIndex animSetIndex,const std::string &animation,PlaybackFlags flags) const
+panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(AnimationSetIndex animSetIndex, const std::string &animation, PlaybackFlags flags) const
 {
 	auto *set = GetAnimationSet(animSetIndex);
 	if(!set)
@@ -138,7 +126,7 @@ panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnima
 	auto id = set->LookupAnimation(animation);
 	if(!id.has_value())
 		return INVALID_ANIMATION_REFERENCE;
-	return FindAnimation(animSetIndex,*id,flags);
+	return FindAnimation(animSetIndex, *id, flags);
 }
 std::optional<panima::AnimationManager::AnimationSetIndex> panima::AnimationManager::FindAnimationSetIndex(const std::string &name) const
 {
@@ -147,51 +135,48 @@ std::optional<panima::AnimationManager::AnimationSetIndex> panima::AnimationMana
 		return {};
 	return it->second;
 }
-panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(const std::string &setName,panima::AnimationId animation,PlaybackFlags flags) const
+panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(const std::string &setName, panima::AnimationId animation, PlaybackFlags flags) const
 {
 	auto setIdx = FindAnimationSetIndex(setName);
 	if(!setIdx.has_value())
 		return INVALID_ANIMATION_REFERENCE;
-	return FindAnimation(*setIdx,animation,flags);
+	return FindAnimation(*setIdx, animation, flags);
 }
-panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(const std::string &setName,const std::string &animation,PlaybackFlags flags) const
+panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(const std::string &setName, const std::string &animation, PlaybackFlags flags) const
 {
 	auto setIdx = FindAnimationSetIndex(setName);
 	if(!setIdx.has_value())
 		return INVALID_ANIMATION_REFERENCE;
-	return FindAnimation(*setIdx,animation,flags);
+	return FindAnimation(*setIdx, animation, flags);
 }
-panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(const std::string &animation,PlaybackFlags flags) const
+panima::AnimationManager::AnimationReference panima::AnimationManager::FindAnimation(const std::string &animation, PlaybackFlags flags) const
 {
-	for(auto it=m_animationSets.begin();it!=m_animationSets.end();++it)
-	{
+	for(auto it = m_animationSets.begin(); it != m_animationSets.end(); ++it) {
 		auto &set = **it;
 		auto animId = set.LookupAnimation(animation);
 		if(!animId.has_value())
 			continue;
-		return FindAnimation(it -m_animationSets.begin(),*animId,flags);
+		return FindAnimation(it - m_animationSets.begin(), *animId, flags);
 	}
 	return INVALID_ANIMATION_REFERENCE;
 }
 
-void panima::AnimationManager::PlayAnimation(AnimationSetIndex animSetIndex,panima::AnimationId animIdx,PlaybackFlags flags)
+void panima::AnimationManager::PlayAnimation(AnimationSetIndex animSetIndex, panima::AnimationId animIdx, PlaybackFlags flags)
 {
-	if(animSetIndex == INVALID_ANIMATION_SET_INDEX || animIdx == panima::INVALID_ANIMATION)
-	{
+	if(animSetIndex == INVALID_ANIMATION_SET_INDEX || animIdx == panima::INVALID_ANIMATION) {
 		StopAnimation();
 		return;
 	}
 	auto &set = m_animationSets[animSetIndex];
-	auto reset = (flags &PlaybackFlags::ResetBit) != PlaybackFlags::None;
-	if(!reset && set.get() == m_currentAnimationSet.lock().get() && m_currentAnimation == animIdx)
-	{
+	auto reset = (flags & PlaybackFlags::ResetBit) != PlaybackFlags::None;
+	if(!reset && set.get() == m_currentAnimationSet.lock().get() && m_currentAnimation == animIdx) {
 		if(set->GetAnimation(animIdx)->HasFlags(panima::Animation::Flags::LoopBit))
 			return;
 	}
 
 	if(!reset && (*this)->GetCurrentTime() == 0.f && m_currentFlags == flags)
 		return;
-	if(m_callbackInterface.onPlayAnimation && m_callbackInterface.onPlayAnimation(*set,animIdx,flags) == false)
+	if(m_callbackInterface.onPlayAnimation && m_callbackInterface.onPlayAnimation(*set, animIdx, flags) == false)
 		return;
 	m_currentAnimationSet = set;
 	m_currentAnimation = animIdx;
@@ -200,36 +185,33 @@ void panima::AnimationManager::PlayAnimation(AnimationSetIndex animSetIndex,pani
 #ifdef PRAGMA_ENABLE_ANIMATION_SYSTEM_2
 	auto &channels = anim->GetChannels();
 	m_currentSlice.channelValues.resize(channels.size());
-	m_lastChannelTimestampIndices.resize(channels.size(),0u);
-	for(auto i=decltype(channels.size()){0u};i<channels.size();++i)
-	{
+	m_lastChannelTimestampIndices.resize(channels.size(), 0u);
+	for(auto i = decltype(channels.size()) {0u}; i < channels.size(); ++i) {
 		auto &channel = channels[i];
 		auto &sliceValue = m_currentSlice.channelValues[i];
 		sliceValue = udm::Property::Create(channel->valueType);
 	}
-	SetCurrentTime(0.f,true);
+	SetCurrentTime(0.f, true);
 #endif
 }
 
-void panima::AnimationManager::PlayAnimation(const std::string &setName,panima::AnimationId animation,PlaybackFlags flags)
+void panima::AnimationManager::PlayAnimation(const std::string &setName, panima::AnimationId animation, PlaybackFlags flags)
 {
-	auto p = FindAnimation(setName,animation,flags);
-	if(p.first == INVALID_ANIMATION_SET_INDEX)
-	{
+	auto p = FindAnimation(setName, animation, flags);
+	if(p.first == INVALID_ANIMATION_SET_INDEX) {
 		StopAnimation();
 		return;
 	}
-	PlayAnimation(p.first,p.second,flags);
+	PlayAnimation(p.first, p.second, flags);
 }
-void panima::AnimationManager::PlayAnimation(const std::string &setName,const std::string &animation,PlaybackFlags flags)
+void panima::AnimationManager::PlayAnimation(const std::string &setName, const std::string &animation, PlaybackFlags flags)
 {
-	auto p = FindAnimation(setName,animation,flags);
-	if(p.first == INVALID_ANIMATION_SET_INDEX)
-	{
+	auto p = FindAnimation(setName, animation, flags);
+	if(p.first == INVALID_ANIMATION_SET_INDEX) {
 		StopAnimation();
 		return;
 	}
-	PlayAnimation(p.first,p.second,flags);
+	PlayAnimation(p.first, p.second, flags);
 }
 void panima::AnimationManager::StopAnimation()
 {
@@ -241,7 +223,7 @@ void panima::AnimationManager::StopAnimation()
 	(*this)->Reset();
 	m_currentFlags = PlaybackFlags::None;
 }
-void panima::AnimationManager::ApplySliceInterpolation(const panima::Slice &src,panima::Slice &dst,float f)
+void panima::AnimationManager::ApplySliceInterpolation(const panima::Slice &src, panima::Slice &dst, float f)
 {
 	// TODO
 	/*if(f == 1.f)
@@ -260,9 +242,9 @@ void panima::AnimationManager::ApplySliceInterpolation(const panima::Slice &src,
 	}*/
 }
 
-std::ostream &operator<<(std::ostream &out,const panima::AnimationManager &o)
+std::ostream &operator<<(std::ostream &out, const panima::AnimationManager &o)
 {
-	out<<"AnimationManager";
-	out<<"[Player:"<<*o<<"]";
+	out << "AnimationManager";
+	out << "[Player:" << *o << "]";
 	return out;
 }

@@ -9,11 +9,11 @@
 #include "panima/bone.hpp"
 #include <functional>
 #include <udm.hpp>
-#pragma optimize("",off)
-std::shared_ptr<panima::Skeleton> panima::Skeleton::Load(const udm::AssetData &data,std::string &outErr)
+#pragma optimize("", off)
+std::shared_ptr<panima::Skeleton> panima::Skeleton::Load(const udm::AssetData &data, std::string &outErr)
 {
 	auto skeleton = std::make_shared<Skeleton>();
-	if(skeleton->LoadFromAssetData(data,outErr) == false)
+	if(skeleton->LoadFromAssetData(data, outErr) == false)
 		return nullptr;
 	return skeleton;
 }
@@ -26,36 +26,30 @@ panima::Skeleton::Skeleton(const Skeleton &other)
 	for(auto &pair : m_rootBones)
 		pair.second = m_bones[pair.first];
 	m_referencePoses = other.m_referencePoses;
-	
-	std::function<void(std::unordered_map<uint32_t,std::shared_ptr<Bone>>&,std::shared_ptr<Bone>)> fUpdateHierarchy;
-	fUpdateHierarchy = [this,&fUpdateHierarchy](std::unordered_map<uint32_t,std::shared_ptr<Bone>> &bones,std::shared_ptr<Bone> parent) {
-		for(auto &pair : bones)
-		{
+
+	std::function<void(std::unordered_map<uint32_t, std::shared_ptr<Bone>> &, std::shared_ptr<Bone>)> fUpdateHierarchy;
+	fUpdateHierarchy = [this, &fUpdateHierarchy](std::unordered_map<uint32_t, std::shared_ptr<Bone>> &bones, std::shared_ptr<Bone> parent) {
+		for(auto &pair : bones) {
 			for(auto &pair : pair.second->children)
 				pair.second = m_bones[pair.first];
-			fUpdateHierarchy(pair.second->children,pair.second);
+			fUpdateHierarchy(pair.second->children, pair.second);
 			pair.second->parent = parent;
 		}
 	};
-	fUpdateHierarchy(m_rootBones,nullptr);
+	fUpdateHierarchy(m_rootBones, nullptr);
 #ifdef _MSC_VER
-	static_assert(sizeof(Skeleton) == 112,"Update this function when making changes to this class!");
+	static_assert(sizeof(Skeleton) == 112, "Update this function when making changes to this class!");
 #endif
 }
 
-bool panima::Skeleton::IsRootBone(uint32_t boneId) const
-{
-	return m_rootBones.find(boneId) != m_rootBones.end();
-}
+bool panima::Skeleton::IsRootBone(uint32_t boneId) const { return m_rootBones.find(boneId) != m_rootBones.end(); }
 
 int32_t panima::Skeleton::LookupBone(const std::string &name) const
 {
 	auto &bones = GetBones();
-	auto it = std::find_if(bones.begin(),bones.end(),[&name](const std::shared_ptr<Bone> &bone) {
-		return (bone->name == name) ? true : false;
-	});
+	auto it = std::find_if(bones.begin(), bones.end(), [&name](const std::shared_ptr<Bone> &bone) { return (bone->name == name) ? true : false; });
 	if(it != bones.end())
-		return static_cast<int32_t>(it -bones.begin());
+		return static_cast<int32_t>(it - bones.begin());
 	return -1;
 }
 
@@ -67,13 +61,13 @@ uint32_t panima::Skeleton::AddBone(Bone *bone)
 	return ID;
 }
 
-const std::vector<std::shared_ptr<panima::Bone>> &panima::Skeleton::GetBones() const {return const_cast<Skeleton*>(this)->GetBones();}
-std::vector<std::shared_ptr<panima::Bone>> &panima::Skeleton::GetBones() {return m_bones;}
+const std::vector<std::shared_ptr<panima::Bone>> &panima::Skeleton::GetBones() const { return const_cast<Skeleton *>(this)->GetBones(); }
+std::vector<std::shared_ptr<panima::Bone>> &panima::Skeleton::GetBones() { return m_bones; }
 
-uint32_t panima::Skeleton::GetBoneCount() const {return static_cast<uint32_t>(m_bones.size());}
+uint32_t panima::Skeleton::GetBoneCount() const { return static_cast<uint32_t>(m_bones.size()); }
 
-std::unordered_map<uint32_t,std::shared_ptr<panima::Bone>> &panima::Skeleton::GetRootBones() {return m_rootBones;}
-const std::unordered_map<uint32_t,std::shared_ptr<panima::Bone>> &panima::Skeleton::GetRootBones() const {return m_rootBones;}
+std::unordered_map<uint32_t, std::shared_ptr<panima::Bone>> &panima::Skeleton::GetRootBones() { return m_rootBones; }
+const std::unordered_map<uint32_t, std::shared_ptr<panima::Bone>> &panima::Skeleton::GetRootBones() const { return m_rootBones; }
 
 std::weak_ptr<panima::Bone> panima::Skeleton::GetBone(uint32_t id) const
 {
@@ -85,41 +79,36 @@ std::weak_ptr<panima::Bone> panima::Skeleton::GetBone(uint32_t id) const
 bool panima::Skeleton::operator==(const Skeleton &other) const
 {
 #ifdef _MSC_VER
-            static_assert(sizeof(Skeleton) == 112,"Update this function when making changes to this class!");
+	static_assert(sizeof(Skeleton) == 112, "Update this function when making changes to this class!");
 #endif
 	if(!(m_bones.size() == other.m_bones.size() && m_rootBones.size() == other.m_rootBones.size()))
 		return false;
-	for(auto i=decltype(m_bones.size()){0u};i<m_bones.size();++i)
-	{
+	for(auto i = decltype(m_bones.size()) {0u}; i < m_bones.size(); ++i) {
 		if(*m_bones[i] != *other.m_bones[i])
 			return false;
 	}
-	for(auto &pair : m_rootBones)
-	{
+	for(auto &pair : m_rootBones) {
 		if(other.m_rootBones.find(pair.first) == other.m_rootBones.end())
 			return false;
 	}
 	return true;
 }
 
-bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data,std::string &outErr)
+bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data, std::string &outErr)
 {
-	if(data.GetAssetType() != PSKEL_IDENTIFIER)
-	{
+	if(data.GetAssetType() != PSKEL_IDENTIFIER) {
 		outErr = "Incorrect format!";
 		return false;
 	}
 
 	auto udm = *data;
 	auto version = data.GetAssetVersion();
-	if(version < 1)
-	{
+	if(version < 1) {
 		outErr = "Invalid version!";
 		return false;
 	}
 
-	struct BoneInfo
-	{
+	struct BoneInfo {
 		udm::LinkedPropertyWrapper udmBone;
 		std::string_view name;
 		std::vector<BoneId> childIds;
@@ -127,15 +116,15 @@ bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data,std::string 
 	};
 
 	std::vector<BoneInfo> udmBoneList {};
-	std::function<BoneId(udm::LinkedPropertyWrapper &prop,const std::string_view &name)> readBone = nullptr;
-	readBone = [this,&readBone,&udmBoneList](udm::LinkedPropertyWrapper &udmBone,const std::string_view &name) -> BoneId {
+	std::function<BoneId(udm::LinkedPropertyWrapper & prop, const std::string_view &name)> readBone = nullptr;
+	readBone = [this, &readBone, &udmBoneList](udm::LinkedPropertyWrapper &udmBone, const std::string_view &name) -> BoneId {
 		if(udmBoneList.size() == udmBoneList.capacity())
-			udmBoneList.reserve(udmBoneList.size() *1.5 +50);
+			udmBoneList.reserve(udmBoneList.size() * 1.5 + 50);
 
 		auto i = udmBoneList.size();
 		udmBoneList.push_back({});
 		auto &boneInfo = udmBoneList.back();
-		boneInfo.udmBone = const_cast<const udm::LinkedPropertyWrapper&>(udmBone);
+		boneInfo.udmBone = const_cast<const udm::LinkedPropertyWrapper &>(udmBone);
 		boneInfo.name = name;
 		uint32_t idx = 0;
 		udmBone["index"](idx);
@@ -143,9 +132,8 @@ bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data,std::string 
 
 		auto udmChildren = udmBone["children"];
 		boneInfo.childIds.reserve(udmChildren.GetChildCount());
-		for(auto udmChild : udmChildren.ElIt())
-		{
-			auto childBoneIdx = readBone(udmChild.property,udmChild.key);
+		for(auto udmChild : udmChildren.ElIt()) {
+			auto childBoneIdx = readBone(udmChild.property, udmChild.key);
 			udmBoneList[i].childIds.push_back(childBoneIdx);
 		}
 		return idx;
@@ -154,34 +142,35 @@ bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data,std::string 
 	std::vector<BoneId> rootBoneIndices {};
 	rootBoneIndices.reserve(udmBones.GetChildCount());
 	for(auto udmBone : udmBones.ElIt())
-		rootBoneIndices.push_back(readBone(udmBone.property,udmBone.key));
+		rootBoneIndices.push_back(readBone(udmBone.property, udmBone.key));
 
 	auto &bones = GetBones();
 	auto numBones = udmBoneList.size();
 	bones.resize(numBones);
 	m_referencePoses.resize(numBones);
-	for(auto i=decltype(udmBoneList.size()){0u};i<udmBoneList.size();++i)
-	{
+	for(auto i = decltype(udmBoneList.size()) {0u}; i < udmBoneList.size(); ++i) {
 		auto &boneInfo = udmBoneList[i];
+		if(boneInfo.index >= bones.size()) {
+			outErr = "Bone index is out of bounds of bone list!";
+			return false;
+		}
 		bones[boneInfo.index] = std::make_shared<Bone>();
 		bones[boneInfo.index]->ID = boneInfo.index;
 	}
 
-	for(auto i=decltype(udmBoneList.size()){0u};i<udmBoneList.size();++i)
-	{
+	for(auto i = decltype(udmBoneList.size()) {0u}; i < udmBoneList.size(); ++i) {
 		auto &boneInfo = udmBoneList[i];
 		auto &bone = bones[boneInfo.index];
 		bone->name = boneInfo.name;
 
 		if(boneInfo.index >= m_referencePoses.size())
-			throw std::runtime_error{"Bone index " +std::to_string(boneInfo.index) +" for reference pose is out of bounds!"};
+			throw std::runtime_error {"Bone index " + std::to_string(boneInfo.index) + " for reference pose is out of bounds!"};
 		auto &pose = m_referencePoses[boneInfo.index];
 		boneInfo.udmBone["pose"](pose);
 
 		bone->children.reserve(boneInfo.childIds.size());
-		for(auto id : boneInfo.childIds)
-		{
-			bone->children.insert(std::make_pair(id,bones[id]));
+		for(auto id : boneInfo.childIds) {
+			bone->children.insert(std::make_pair(id, bones[id]));
 			bones[id]->parent = bone;
 		}
 	}
@@ -192,24 +181,24 @@ bool panima::Skeleton::LoadFromAssetData(const udm::AssetData &data,std::string 
 	return true;
 }
 
-bool panima::Skeleton::Save(udm::AssetDataArg outData,std::string &outErr)
+bool panima::Skeleton::Save(udm::AssetDataArg outData, std::string &outErr)
 {
 	outData.SetAssetType(PSKEL_IDENTIFIER);
 	outData.SetAssetVersion(FORMAT_VERSION);
 	auto udm = *outData;
 
-	std::function<void(udm::LinkedPropertyWrapperArg prop,const Bone &bone)> writeBone = nullptr;
-	writeBone = [this,&writeBone](udm::LinkedPropertyWrapperArg prop,const Bone &bone) {
+	std::function<void(udm::LinkedPropertyWrapperArg prop, const Bone &bone)> writeBone = nullptr;
+	writeBone = [this, &writeBone](udm::LinkedPropertyWrapperArg prop, const Bone &bone) {
 		auto udmBone = prop[bone.name];
 		udmBone["index"] = static_cast<uint32_t>(bone.ID);
 		udmBone["pose"] = m_referencePoses[bone.ID];
 
 		for(auto &pair : bone.children)
-			writeBone(udmBone["children"],*pair.second);
+			writeBone(udmBone["children"], *pair.second);
 	};
 	auto udmBones = udm["bones"];
 	for(auto &pair : m_rootBones)
-		writeBone(udmBones,*pair.second);
+		writeBone(udmBones, *pair.second);
 	return true;
 }
 
@@ -217,35 +206,30 @@ void panima::Skeleton::Merge(Skeleton &other)
 {
 	auto &bones = GetBones();
 	auto &rootBones = GetRootBones();
-	std::function<void(const std::unordered_map<uint32_t,std::shared_ptr<Bone>>&,std::shared_ptr<Bone>)> mergeHierarchy = nullptr;
-	mergeHierarchy = [this,&bones,&rootBones,&mergeHierarchy](const std::unordered_map<uint32_t,std::shared_ptr<Bone>> &otherBones,std::shared_ptr<Bone> parent) {
-		for(auto &pair : otherBones)
-		{
+	std::function<void(const std::unordered_map<uint32_t, std::shared_ptr<Bone>> &, std::shared_ptr<Bone>)> mergeHierarchy = nullptr;
+	mergeHierarchy = [this, &bones, &rootBones, &mergeHierarchy](const std::unordered_map<uint32_t, std::shared_ptr<Bone>> &otherBones, std::shared_ptr<Bone> parent) {
+		for(auto &pair : otherBones) {
 			auto &otherBone = pair.second;
-			auto it = std::find_if(bones.begin(),bones.end(),[&otherBone](const std::shared_ptr<Bone> &bone) {
-				return ustring::compare(bone->name,otherBone->name,true);
-			});
-			if(it == bones.end())
-			{
+			auto it = std::find_if(bones.begin(), bones.end(), [&otherBone](const std::shared_ptr<Bone> &bone) { return ustring::compare(bone->name, otherBone->name, true); });
+			if(it == bones.end()) {
 				// Bone doesn't exist yet; Add to hierarchy
 				bones.push_back(std::make_shared<Bone>());
 				auto &newBone = bones.back();
-				newBone->ID = bones.size() -1;
+				newBone->ID = bones.size() - 1;
 				newBone->name = otherBone->name;
-				if(parent != nullptr)
-				{
+				if(parent != nullptr) {
 					newBone->parent = parent;
-					parent->children.insert(std::make_pair(newBone->ID,newBone));
+					parent->children.insert(std::make_pair(newBone->ID, newBone));
 				}
 				else
-					rootBones.insert(std::make_pair(newBone->ID,newBone));
-				mergeHierarchy(otherBone->children,newBone);
+					rootBones.insert(std::make_pair(newBone->ID, newBone));
+				mergeHierarchy(otherBone->children, newBone);
 			}
 			else // Bone already exists; Ignore it and continue in hierarchy
-				mergeHierarchy(otherBone->children,parent);
+				mergeHierarchy(otherBone->children, parent);
 		}
 	};
 	auto &otherRootBones = other.GetRootBones();
-	mergeHierarchy(otherRootBones,nullptr);
+	mergeHierarchy(otherRootBones, nullptr);
 }
-#pragma optimize("",on)
+#pragma optimize("", on)

@@ -8,24 +8,11 @@
 #include "panima/animation_set.hpp"
 #include "panima/animation.hpp"
 
-static size_t get_anim_hash(const std::string &name)
-{
-	return std::hash<std::string>{}(name);
-}
-static size_t get_anim_hash(const std::string_view &name)
-{
-	return std::hash<std::string_view>{}(name);
-}
-static size_t get_anim_hash(const panima::Animation &anim)
-{
-	return get_anim_hash(anim.GetName());
-}
-std::shared_ptr<panima::AnimationSet> panima::AnimationSet::Create()
-{
-	return std::shared_ptr<AnimationSet>{new AnimationSet{}};
-}
-panima::AnimationSet::AnimationSet()
-{}
+static size_t get_anim_hash(const std::string &name) { return std::hash<std::string> {}(name); }
+static size_t get_anim_hash(const std::string_view &name) { return std::hash<std::string_view> {}(name); }
+static size_t get_anim_hash(const panima::Animation &anim) { return get_anim_hash(anim.GetName()); }
+std::shared_ptr<panima::AnimationSet> panima::AnimationSet::Create() { return std::shared_ptr<AnimationSet> {new AnimationSet {}}; }
+panima::AnimationSet::AnimationSet() {}
 void panima::AnimationSet::Clear()
 {
 	m_animations.clear();
@@ -38,9 +25,9 @@ void panima::AnimationSet::AddAnimation(Animation &anim)
 	if(it != m_nameToId.end())
 		RemoveAnimation(anim);
 	m_animations.push_back(anim.shared_from_this());
-	m_nameToId.insert(std::make_pair(hash,m_animations.size() -1));
+	m_nameToId.insert(std::make_pair(hash, m_animations.size() - 1));
 }
-void panima::AnimationSet::RemoveAnimation(const Animation &anim) {RemoveAnimation(anim.GetName());}
+void panima::AnimationSet::RemoveAnimation(const Animation &anim) { RemoveAnimation(anim.GetName()); }
 
 void panima::AnimationSet::RemoveAnimation(AnimationId id)
 {
@@ -55,10 +42,9 @@ void panima::AnimationSet::RemoveAnimation(const std::string_view &animName)
 	if(it == m_nameToId.end())
 		return;
 	auto id = it->second;
-	m_animations.erase(m_animations.begin() +id);
+	m_animations.erase(m_animations.begin() + id);
 	m_nameToId.erase(it);
-	for(auto &pair : m_nameToId)
-	{
+	for(auto &pair : m_nameToId) {
 		if(id >= pair.second)
 			--pair.second;
 	}
@@ -69,7 +55,7 @@ void panima::AnimationSet::Reserve(uint32_t count)
 	m_animations.reserve(count);
 	m_nameToId.reserve(count);
 }
-uint32_t panima::AnimationSet::GetSize() const {return m_animations.size();}
+uint32_t panima::AnimationSet::GetSize() const { return m_animations.size(); }
 
 panima::Animation *panima::AnimationSet::GetAnimation(AnimationId id)
 {
@@ -94,9 +80,9 @@ std::optional<panima::AnimationId> panima::AnimationSet::LookupAnimation(const s
 	return it->second;
 }
 
-std::ostream &operator<<(std::ostream &out,const panima::AnimationSet &o)
+std::ostream &operator<<(std::ostream &out, const panima::AnimationSet &o)
 {
-	out<<"AnimationSet";
-	out<<"[Count:"<<o.GetSize()<<"]";
+	out << "AnimationSet";
+	out << "[Count:" << o.GetSize() << "]";
 	return out;
 }
