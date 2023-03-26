@@ -8,6 +8,7 @@
 #include "panima/channel.hpp"
 #include "panima/channel_t.hpp"
 #include "value_expression.hpp"
+#include <mathutil/color.h>
 
 static constexpr auto VALUE_EPSILON = 0.001f;
 
@@ -62,6 +63,28 @@ namespace panima::expression {
 	static ExprScalar elerp(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3) { return ramp(3 * v1 * v1 - 2 * v1 * v1 * v1, v2, v3); }
 	static ExprScalar crescale(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3, const ExprScalar &v4, const ExprScalar &v5) { return umath::clamp(rescale(v1, v2, v3, v4, v5), v4, v5); }
 
+	static ExprScalar hsv_to_rgb(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters)
+	{
+		using generic_type = exprtk::igeneric_function<ExprScalar>::generic_type;
+		typename generic_type::vector_view hsv {parameters[0]};
+		typename generic_type::vector_view out {parameters[1]};
+
+		auto rgb = util::hsv_to_rgb(hsv[0], hsv[1], hsv[2]);
+		*reinterpret_cast<::Vector3 *>(&out[0]) = rgb;
+		return ExprScalar {};
+	}
+	static ExprScalar rgb_to_hsv(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters)
+	{
+		using generic_type = exprtk::igeneric_function<ExprScalar>::generic_type;
+		typename generic_type::vector_view rgb {parameters[0]};
+		typename generic_type::vector_view out {parameters[1]};
+
+		double h, s, v;
+		util::rgb_to_hsv(::Vector3 {rgb[0], rgb[1], rgb[2]}, h, s, v);
+		*reinterpret_cast<::Vector3 *>(&out[0]) = ::Vector3 {static_cast<float>(h), static_cast<float>(s), static_cast<float>(v)};
+		return ExprScalar {};
+	}
+
 	extern exprtk::symbol_table<ExprScalar> &get_quaternion_symbol_table();
 	static exprtk::symbol_table<ExprScalar> &get_base_symbol_table()
 	{
@@ -89,8 +112,14 @@ namespace panima::expression {
 		symTable.add_function("rescale", f_rescale);
 		symTable.add_function("crescale", f_crescale);
 
+		static ExprFuncGeneric<ExprScalar, hsv_to_rgb> f_hsv_to_rgb {};
+		static ExprFuncGeneric<ExprScalar, rgb_to_hsv> f_rgb_to_hsv {};
+		symTable.add_function("hsv_to_rgb", f_hsv_to_rgb);
+		symTable.add_function("rgb_to_hsv", f_rgb_to_hsv);
+
 		static ExprFuncPrint<ExprScalar> f_print {};
 		symTable.add_function("print", f_print);
+
 		symTable.add_constants();
 		return symTable;
 	}
