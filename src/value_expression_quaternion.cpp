@@ -27,6 +27,40 @@ namespace panima::expression {
 		return ExprScalar {};
 	}
 
+	static ExprScalar q_from_euler_angles(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters)
+	{
+		using generic_type = exprtk::igeneric_function<ExprScalar>::generic_type;
+		if constexpr(ENABLE_SAFETY_CHECKS) {
+			if(parameters.size() < 3 || parameters[0].type != generic_type::e_vector || parameters[1].type != generic_type::e_vector)
+				return {};
+		}
+		typename generic_type::vector_view angles {parameters[0]};
+		typename generic_type::vector_view out {parameters[1]};
+		if constexpr(ENABLE_SAFETY_CHECKS) {
+			if(angles.size() < 3 || out.size() < 4)
+				return {};
+		}
+		*reinterpret_cast<Quat *>(&out[0]) = uquat::create(*reinterpret_cast<::EulerAngles *>(&angles[0]));
+		return ExprScalar {};
+	}
+
+	static ExprScalar q_to_euler_angles(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters)
+	{
+		using generic_type = exprtk::igeneric_function<ExprScalar>::generic_type;
+		if constexpr(ENABLE_SAFETY_CHECKS) {
+			if(parameters.size() < 3 || parameters[0].type != generic_type::e_vector || parameters[1].type != generic_type::e_vector)
+				return {};
+		}
+		typename generic_type::vector_view quat {parameters[0]};
+		typename generic_type::vector_view out {parameters[1]};
+		if constexpr(ENABLE_SAFETY_CHECKS) {
+			if(quat.size() < 4 || out.size() < 3)
+				return {};
+		}
+		*reinterpret_cast<EulerAngles *>(&out[0]) = EulerAngles {*reinterpret_cast<::Quat *>(&quat[0])};
+		return ExprScalar {};
+	}
+
 	static ExprScalar q_forward(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters)
 	{
 		using generic_type = exprtk::igeneric_function<ExprScalar>::generic_type;
@@ -200,6 +234,8 @@ namespace panima::expression {
 
 		static_assert(std::is_same_v<ExprScalar, Quat::value_type> && std::is_same_v<ExprScalar, ::Vector3::value_type>);
 		static ExprFuncGeneric<ExprScalar, q_from_axis_angle> f_q_from_axis_angle {};
+		static ExprFuncGeneric<ExprScalar, q_from_euler_angles> f_q_from_euler_angles {};
+		static ExprFuncGeneric<ExprScalar, q_to_euler_angles> f_q_to_euler_angles {};
 		static ExprFuncGeneric<ExprScalar, q_forward> f_q_forward {};
 		static ExprFuncGeneric<ExprScalar, q_right> f_q_right {};
 		static ExprFuncGeneric<ExprScalar, q_up> f_q_up {};
@@ -211,6 +247,8 @@ namespace panima::expression {
 		static ExprFuncGeneric<ExprScalar, q_length> f_q_length {};
 
 		symTable.add_function("q_from_axis_angle", f_q_from_axis_angle);
+		symTable.add_function("q_from_euler_angles", f_q_from_euler_angles);
+		symTable.add_function("q_to_euler_angles", f_q_to_euler_angles);
 		symTable.add_function("q_forward", f_q_forward);
 		symTable.add_function("q_right", f_q_right);
 		symTable.add_function("q_up", f_q_up);
