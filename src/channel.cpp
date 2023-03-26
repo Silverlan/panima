@@ -256,6 +256,16 @@ bool panima::Channel::ClearRange(float startTime, float endTime)
 	return true;
 }
 void panima::Channel::ClearValueExpression() { m_valueExpression = nullptr; }
+bool panima::Channel::TestValueExpression(std::string expression, std::string &outErr)
+{
+	m_valueExpression = nullptr;
+
+	auto expr = std::make_unique<expression::ValueExpression>(*this);
+	expr->expression = std::move(expression);
+	if(!expr->Initialize(GetValueType(), outErr))
+		return false;
+	return true;
+}
 bool panima::Channel::SetValueExpression(std::string expression, std::string &outErr)
 {
 	m_valueExpression = nullptr;

@@ -145,6 +145,7 @@ namespace panima {
 		}
 		void ClearValueExpression();
 		bool SetValueExpression(std::string expression, std::string &outErr);
+		bool TestValueExpression(std::string expression, std::string &outErr);
 		const std::string *GetValueExpression() const;
 
 		void SetTimeFrame(TimeFrame timeFrame) { m_timeFrame = std::move(timeFrame); }
