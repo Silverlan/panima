@@ -35,6 +35,9 @@ namespace panima {
 		std::vector<umath::ScaledTransform> &GetBonePoses() { return m_referencePoses; }
 		const std::vector<umath::ScaledTransform> &GetBonePoses() const { return const_cast<Skeleton *>(this)->GetBonePoses(); }
 
+		bool TransformToParentSpace(const std::vector<umath::ScaledTransform> &gsPoses, std::vector<umath::ScaledTransform> &outPoses) const;
+		bool TransformToGlobalSpace(const std::vector<umath::ScaledTransform> &psPoses, std::vector<umath::ScaledTransform> &outPoses) const;
+
 		void Merge(Skeleton &other);
 		bool Save(udm::AssetDataArg outData, std::string &outErr);
 

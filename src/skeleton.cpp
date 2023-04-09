@@ -44,6 +44,44 @@ panima::Skeleton::Skeleton(const Skeleton &other)
 
 bool panima::Skeleton::IsRootBone(uint32_t boneId) const { return m_rootBones.find(boneId) != m_rootBones.end(); }
 
+bool panima::Skeleton::TransformToParentSpace(const std::vector<umath::ScaledTransform> &gsPoses, std::vector<umath::ScaledTransform> &outPoses) const
+{
+	if(gsPoses.size() != outPoses.size() || gsPoses.size() != m_bones.size())
+		return false;
+	if(&outPoses == &gsPoses) {
+		auto tmp = gsPoses;
+		return TransformToParentSpace(tmp, outPoses);
+	}
+	std::function<void(const Bone &bone)> transformToParentSpace = nullptr;
+	transformToParentSpace = [&](const Bone &bone) { 
+		if(bone.parent.expired() == false)
+			outPoses[bone.ID] = gsPoses[bone.parent.lock()->ID].GetInverse() * gsPoses[bone.ID];
+		for(auto &pair : bone.children)
+			transformToParentSpace(*pair.second);
+	};
+	for(auto &pair : m_rootBones)
+		transformToParentSpace(*pair.second);
+	return true;
+}
+bool panima::Skeleton::TransformToGlobalSpace(const std::vector<umath::ScaledTransform> &psPoses, std::vector<umath::ScaledTransform> &outPoses) const {
+	if(psPoses.size() != outPoses.size() || psPoses.size() != m_bones.size())
+		return false;
+	if(&outPoses == &psPoses) {
+		auto tmp = psPoses;
+		return TransformToParentSpace(tmp, outPoses);
+	}
+	std::function<void(const Bone &bone)> transformToParentSpace = nullptr;
+	transformToParentSpace = [&](const Bone &bone) {
+		if(bone.parent.expired() == false)
+			outPoses[bone.ID] = psPoses[bone.parent.lock()->ID] * psPoses[bone.ID];
+		for(auto &pair : bone.children)
+			transformToParentSpace(*pair.second);
+	};
+	for(auto &pair : m_rootBones)
+		transformToParentSpace(*pair.second);
+	return true;
+}
+
 int32_t panima::Skeleton::LookupBone(const std::string &name) const
 {
 	auto &bones = GetBones();
