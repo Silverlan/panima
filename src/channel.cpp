@@ -10,6 +10,7 @@
 #include "value_expression.hpp"
 #include <udm.hpp>
 #include <sharedutils/util_uri.hpp>
+#include <sharedutils/util_string.h>
 
 panima::ChannelPath::ChannelPath(const std::string &ppath)
 {
