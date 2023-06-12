@@ -467,3 +467,11 @@ std::ostream &operator<<(std::ostream &out, const panima::ChannelPath &o)
 	out << "[" << o.ToUri() << "]";
 	return out;
 }
+
+//////////
+
+panima::ChannelValueSubmitter::ChannelValueSubmitter(const std::function<void(Channel &, uint32_t &, double)> &submitter) : submitter {submitter} {}
+panima::ChannelValueSubmitter::operator bool() const { return submitter && enabled; }
+bool panima::ChannelValueSubmitter::operator==(const std::nullptr_t &t) const { return submitter == nullptr; }
+bool panima::ChannelValueSubmitter::operator!=(const std::nullptr_t &t) const { return submitter != nullptr; }
+void panima::ChannelValueSubmitter::operator()(Channel &channel, uint32_t &timestampIndex, double t) { submitter(channel, timestampIndex, t); }

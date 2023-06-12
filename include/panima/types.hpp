@@ -53,7 +53,16 @@ namespace panima {
 
 	class AnimationSet;
 	using PAnimationSet = std::shared_ptr<AnimationSet>;
-	using ChannelValueSubmitter = std::function<void(Channel &, uint32_t &, double)>;
+	struct ChannelValueSubmitter {
+		ChannelValueSubmitter() = default;
+		ChannelValueSubmitter(const std::function<void(Channel &, uint32_t &, double)> &submitter);
+		std::function<void(Channel &, uint32_t &, double)> submitter;
+		bool enabled = true;
+		operator bool() const;
+		bool operator==(const std::nullptr_t &t) const;
+		bool operator!=(const std::nullptr_t &t) const;
+		void operator()(Channel &channel, uint32_t &timestampIndex, double t);
+	};
 
 	struct ChannelPath;
 
