@@ -228,18 +228,18 @@ void panima::Channel::MergeValues(const Channel &other)
 		});
 	});
 }
-bool panima::Channel::ClearRange(float startTime, float endTime)
+bool panima::Channel::ClearRange(float startTime, float endTime, bool addCaps)
 {
 	if(GetTimesArray().IsEmpty())
 		return true;
 	float t;
 	auto indicesStart = FindInterpolationIndices(startTime, t);
+	auto startIdx = (t < VALUE_EPSILON) ? indicesStart.first : indicesStart.second;
 	auto indicesEnd = FindInterpolationIndices(endTime, t);
-	auto startIdx = indicesStart.second;
-	auto endIdx = indicesEnd.first;
+	auto endIdx = (t > (1.f - VALUE_EPSILON)) ? indicesEnd.second : indicesEnd.first;
 	if(startIdx == std::numeric_limits<uint32_t>::max() || endIdx == std::numeric_limits<uint32_t>::max() || endIdx < startIdx)
 		return false;
-	udm::visit_ng(GetValueType(), [this, startTime, endTime, startIdx, endIdx](auto tag) {
+	udm::visit_ng(GetValueType(), [this, startTime, endTime, startIdx, endIdx, addCaps](auto tag) {
 		using T = typename decltype(tag)::type;
 		if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
 			auto startVal = GetInterpolatedValue<T>(startTime);
@@ -250,8 +250,10 @@ bool panima::Channel::ClearRange(float startTime, float endTime)
 			times.RemoveValueRange(startIdx, (endIdx - startIdx) + 1);
 			values.RemoveValueRange(startIdx, (endIdx - startIdx) + 1);
 
-			AddValue<T>(startTime, startVal);
-			AddValue<T>(endTime, endVal);
+			if(addCaps) {
+				AddValue<T>(startTime, startVal);
+				AddValue<T>(endTime, endVal);
+			}
 		}
 	});
 	return true;
