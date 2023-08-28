@@ -80,6 +80,8 @@ namespace panima {
 
 		template<typename T>
 		uint32_t AddValue(float t, const T &value);
+		template<typename T>
+		uint32_t InsertValues(uint32_t n, const float *times, const T *values);
 
 		udm::Array &GetTimesArray();
 		const udm::Array &GetTimesArray() const { return const_cast<Channel *>(this)->GetTimesArray(); }
@@ -163,6 +165,7 @@ namespace panima {
 		template<typename T>
 		bool DoApplyValueExpression(double time, uint32_t timeIndex, T &inOutVal) const;
 		uint32_t AddValue(float t, const void *value);
+		uint32_t InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride);
 		std::pair<uint32_t, uint32_t> FindInterpolationIndices(float t, float &outInterpFactor, uint32_t pivotIndex, uint32_t recursionDepth) const;
 		udm::PProperty m_times = nullptr;
 		udm::PProperty m_values = nullptr;

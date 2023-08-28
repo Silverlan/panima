@@ -28,6 +28,14 @@ uint32_t panima::Channel::AddValue(float t, const T &value)
 	return AddValue(t, static_cast<const void *>(&value));
 }
 
+template<typename T>
+uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const T *values)
+{
+	if(udm::type_to_enum<T>() != GetValueType())
+		throw std::invalid_argument {"Value type mismatch!"};
+	return InsertValues(n, times, values, sizeof(T));
+}
+
 /////////////////////
 
 template<typename T>

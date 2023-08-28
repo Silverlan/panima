@@ -286,6 +286,38 @@ const std::string *panima::Channel::GetValueExpression() const
 		return &m_valueExpression->expression;
 	return nullptr;
 }
+uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride)
+{
+	if(n == 0)
+		return std::numeric_limits<uint32_t>::max();
+	auto startTime = times[0];
+	auto endTime = times[n - 1];
+	ClearRange(startTime, endTime, false);
+	float f;
+	auto indices = FindInterpolationIndices(times[0], f);
+	auto startIndex = indices.second;
+	if(startIndex == std::numeric_limits<decltype(startIndex)>::max())
+		startIndex = GetValueCount();
+	auto numCurValues = GetValueCount();
+	auto numNewValues = numCurValues + n;
+	Resize(numCurValues + n);
+
+	auto &timesArray = GetTimesArray();
+	auto &valueArray = GetValueArray();
+	auto *pValues = static_cast<const uint8_t *>(values);
+	for(auto i = startIndex; i < (startIndex + n); ++i) {
+		if(i + n < numNewValues) {
+			// A value already existed here, we have to move it up
+			timesArray.SetValue(i + n, static_cast<const void *>(timesArray.GetValuePtr(i)));
+			valueArray.SetValue(i + n, static_cast<const void *>(valueArray.GetValuePtr(i)));
+		}
+
+		timesArray.SetValue(i, times[i - startIndex]);
+		valueArray.SetValue(i, static_cast<const void *>(pValues));
+		pValues += valueStride;
+	}
+	return startIndex;
+}
 uint32_t panima::Channel::AddValue(float t, const void *value)
 {
 	float interpFactor;
