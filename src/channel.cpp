@@ -289,17 +289,24 @@ const std::string *panima::Channel::GetValueExpression() const
 		return &m_valueExpression->expression;
 	return nullptr;
 }
-uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride)
+uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset)
 {
 	if(n == 0)
 		return std::numeric_limits<uint32_t>::max();
+	if(offset != 0.f) {
+		std::vector<float> timesWithOffset;
+		timesWithOffset.resize(n);
+		for(auto i = decltype(n) {0u}; i < n; ++i)
+			timesWithOffset[i] = times[i] + offset;
+		return InsertValues(n, timesWithOffset.data(), values, valueStride, 0.f);
+	}
 	auto startTime = times[0];
 	auto endTime = times[n - 1];
 	ClearRange(startTime, endTime, false);
 	float f;
 	auto indices = FindInterpolationIndices(times[0], f);
 	auto startIndex = indices.second;
-	if(startIndex == std::numeric_limits<decltype(startIndex)>::max())
+	if(startIndex == std::numeric_limits<decltype(startIndex)>::max() || startTime > *GetTime(indices.second))
 		startIndex = GetValueCount();
 	auto numCurValues = GetValueCount();
 	auto numNewValues = numCurValues + n;
