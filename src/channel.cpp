@@ -232,13 +232,16 @@ bool panima::Channel::ClearRange(float startTime, float endTime, bool addCaps)
 {
 	if(GetTimesArray().IsEmpty())
 		return true;
+	constexpr float TIME_EPSILON = 0.0001f;
 	float t;
 	auto indicesStart = FindInterpolationIndices(startTime, t);
-	auto startIdx = (t < VALUE_EPSILON) ? indicesStart.first : indicesStart.second;
+	auto startIdx = (t < TIME_EPSILON) ? indicesStart.first : indicesStart.second;
 	auto indicesEnd = FindInterpolationIndices(endTime, t);
-	auto endIdx = (t > (1.f - VALUE_EPSILON)) ? indicesEnd.second : indicesEnd.first;
+	auto endIdx = (t > (1.f - TIME_EPSILON)) ? indicesEnd.second : indicesEnd.first;
 	if(startIdx == std::numeric_limits<uint32_t>::max() || endIdx == std::numeric_limits<uint32_t>::max() || endIdx < startIdx)
 		return false;
+	if(startTime > *GetTime(endIdx) + TIME_EPSILON)
+		return false; // Out of range
 	udm::visit_ng(GetValueType(), [this, startTime, endTime, startIdx, endIdx, addCaps](auto tag) {
 		using T = typename decltype(tag)::type;
 		if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
