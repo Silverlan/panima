@@ -173,6 +173,7 @@ namespace panima {
 
 		struct ValueExpression {
 			ValueExpression(Channel &channel) : channel {channel} {}
+			ValueExpression(const ValueExpression &other);
 			~ValueExpression();
 			Channel &channel;
 			std::string expression;

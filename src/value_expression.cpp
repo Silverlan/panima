@@ -182,6 +182,14 @@ bool panima::expression::ValueExpression::Initialize(udm::Type type, std::string
 	return true;
 }
 
+panima::expression::ValueExpression::ValueExpression(const ValueExpression &other) : ValueExpression {other.channel}
+{
+	expression = other.expression;
+	m_type = other.m_type;
+	std::string err;
+	Initialize(other.m_type,err);
+}
+
 panima::expression::ValueExpression::~ValueExpression() { expr.f_valueAt = nullptr; }
 
 template<typename T>
