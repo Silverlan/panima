@@ -12,6 +12,15 @@ namespace panima {
 	constexpr auto ANIMATION_CHANNEL_TYPE_POSITION = udm::Type::Vector3;
 	constexpr auto ANIMATION_CHANNEL_TYPE_ROTATION = udm::Type::Quaternion;
 	constexpr auto ANIMATION_CHANNEL_TYPE_SCALE = udm::Type::Vector3;
+
+	template<typename T0, typename T1>
+	concept is_binary_compatible_type_v = (std::is_same_v<T0, T1>) || (std::is_same_v<T0, bool> && (std::is_same_v<T1, int8_t> || std::is_same_v<T1, uint8_t>)) || (std::is_same_v<T1, bool> && (std::is_same_v<T0, int8_t> || std::is_same_v<T0, uint8_t>));
+
+	constexpr bool is_binary_compatible_type(udm::Type t0, udm::Type t1)
+	{
+		static_assert(sizeof(bool) == sizeof(udm::Int8) && sizeof(bool) == sizeof(udm::UInt8));
+		return (t0 == t1) || (t0 == udm::Type::Boolean && (t1 == udm::Type::Int8 || t1 == udm::Type::UInt8)) || (t1 == udm::Type::Boolean && (t0 == udm::Type::Int8 || t0 == udm::Type::UInt8));
+	}
 };
 
 template<typename T>
@@ -23,7 +32,7 @@ bool panima::Channel::IsValueType() const
 template<typename T>
 uint32_t panima::Channel::AddValue(float t, const T &value)
 {
-	if(udm::type_to_enum<T>() != GetValueType())
+	if(!is_binary_compatible_type(udm::type_to_enum<T>(), GetValueType()))
 		throw std::invalid_argument {"Value type mismatch!"};
 	return AddValue(t, static_cast<const void *>(&value));
 }
@@ -31,7 +40,7 @@ uint32_t panima::Channel::AddValue(float t, const T &value)
 template<typename T>
 uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const T *values, float offset)
 {
-	if(udm::type_to_enum<T>() != GetValueType())
+	if(!is_binary_compatible_type(udm::type_to_enum<T>(), GetValueType()))
 		throw std::invalid_argument {"Value type mismatch!"};
 	return InsertValues(n, times, values, sizeof(T), offset);
 }

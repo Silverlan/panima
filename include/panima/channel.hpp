@@ -68,12 +68,15 @@ namespace panima {
 		};
 
 		static constexpr auto VALUE_EPSILON = 0.001f;
+		static constexpr float TIME_EPSILON = 0.0001f;
 		Channel();
 		Channel(const udm::PProperty &times, const udm::PProperty &values);
 		//Channel(const Channel &other)=default;
 		Channel(Channel &&other) = default;
+		Channel(Channel &other);
 		//Channel &operator=(const Channel&)=default;
 		Channel &operator=(Channel &&) = default;
+		Channel &operator=(Channel &other);
 		~Channel();
 		ChannelInterpolation interpolation = ChannelInterpolation::Linear;
 		ChannelPath targetPath;
@@ -89,6 +92,7 @@ namespace panima {
 		const udm::Array &GetValueArray() const { return const_cast<Channel *>(this)->GetValueArray(); }
 		udm::Type GetValueType() const;
 		void SetValueType(udm::Type type);
+		bool Validate() const;
 
 		float GetMinTime() const;
 		float GetMaxTime() const;

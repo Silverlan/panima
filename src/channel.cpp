@@ -92,7 +92,19 @@ panima::ArrayFloatIterator panima::end(const udm::Array &a) { return ArrayFloatI
 
 panima::Channel::Channel() : m_times {::udm::Property::Create(udm::Type::ArrayLz4)}, m_values {::udm::Property::Create(udm::Type::ArrayLz4)} { GetTimesArray().SetValueType(udm::Type::Float); }
 panima::Channel::Channel(const udm::PProperty &times, const udm::PProperty &values) : m_times {times}, m_values {values} {}
+panima::Channel::Channel(Channel &other) : Channel {} { operator=(other); }
 panima::Channel::~Channel() {}
+panima::Channel &panima::Channel::operator=(Channel &other)
+{
+	m_times = other.m_times->Copy(true);
+	m_values = other.m_values->Copy(true);
+	m_valueExpression = nullptr;
+	if(other.m_valueExpression)
+		m_valueExpression = std::make_unique<expression::ValueExpression>(*other.m_valueExpression);
+	m_timeFrame = other.m_timeFrame;
+	m_effectiveTimeFrame = other.m_effectiveTimeFrame;
+	return *this;
+}
 bool panima::Channel::Save(udm::LinkedPropertyWrapper &prop) const
 {
 	prop["interpolation"] = interpolation;
@@ -232,7 +244,12 @@ bool panima::Channel::ClearRange(float startTime, float endTime, bool addCaps)
 {
 	if(GetTimesArray().IsEmpty())
 		return true;
-	constexpr float TIME_EPSILON = 0.0001f;
+	auto minTime = *GetTime(0);
+	auto maxTime = *GetTime(GetTimeCount() - 1);
+	if(endTime < startTime || (startTime < minTime - TIME_EPSILON && endTime < minTime - TIME_EPSILON) || (startTime > maxTime + TIME_EPSILON && endTime > maxTime + TIME_EPSILON))
+		return false;
+	startTime = umath::clamp(startTime, minTime, maxTime);
+	endTime = umath::clamp(endTime, minTime, maxTime);
 	float t;
 	auto indicesStart = FindInterpolationIndices(startTime, t);
 	auto startIdx = (t < TIME_EPSILON) ? indicesStart.first : indicesStart.second;
@@ -240,8 +257,6 @@ bool panima::Channel::ClearRange(float startTime, float endTime, bool addCaps)
 	auto endIdx = (t > (1.f - TIME_EPSILON)) ? indicesEnd.second : indicesEnd.first;
 	if(startIdx == std::numeric_limits<uint32_t>::max() || endIdx == std::numeric_limits<uint32_t>::max() || endIdx < startIdx)
 		return false;
-	if(startTime > *GetTime(endIdx) + TIME_EPSILON)
-		return false; // Out of range
 	udm::visit_ng(GetValueType(), [this, startTime, endTime, startIdx, endIdx, addCaps](auto tag) {
 		using T = typename decltype(tag)::type;
 		if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
@@ -302,7 +317,7 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 	}
 	auto startTime = times[0];
 	auto endTime = times[n - 1];
-	ClearRange(startTime, endTime, false);
+	ClearRange(startTime -TIME_EPSILON, endTime +TIME_EPSILON, false);
 	float f;
 	auto indices = FindInterpolationIndices(times[0], f);
 	auto startIndex = indices.second;
@@ -315,15 +330,21 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 	auto &timesArray = GetTimesArray();
 	auto &valueArray = GetValueArray();
 	auto *pValues = static_cast<const uint8_t *>(values);
-	for(auto i = startIndex; i < (startIndex + n); ++i) {
-		if(i + n < numNewValues) {
-			// A value already existed here, we have to move it up
-			timesArray.SetValue(i + n, static_cast<const void *>(timesArray.GetValuePtr(i)));
-			valueArray.SetValue(i + n, static_cast<const void *>(valueArray.GetValuePtr(i)));
-		}
 
-		timesArray.SetValue(i, times[i - startIndex]);
-		valueArray.SetValue(i, static_cast<const void *>(pValues));
+	// Move up current values
+	for(auto i = static_cast<int64_t>(numNewValues - 1); i >= startIndex +n; --i) {
+		auto iSrc = i - n;
+		auto iDst = i;
+		timesArray.SetValue(iDst, static_cast<const void *>(timesArray.GetValuePtr(iSrc)));
+		valueArray.SetValue(iDst, static_cast<const void *>(valueArray.GetValuePtr(iSrc)));
+	}
+
+	// Assign new values
+	for(auto i = startIndex; i < (startIndex + n); ++i) {
+		auto iSrc = i - startIndex;
+		auto iDst = i;
+		timesArray.SetValue(iDst, times[i - startIndex]);
+		valueArray.SetValue(iDst, static_cast<const void *>(pValues));
 		pValues += valueStride;
 	}
 	return startIndex;
@@ -389,6 +410,30 @@ udm::Array &panima::Channel::GetTimesArray() { return m_times->GetValue<udm::Arr
 udm::Array &panima::Channel::GetValueArray() { return m_values->GetValue<udm::Array>(); }
 udm::Type panima::Channel::GetValueType() const { return GetValueArray().GetValueType(); }
 void panima::Channel::SetValueType(udm::Type type) { GetValueArray().SetValueType(type); }
+bool panima::Channel::Validate() const
+{
+	std::vector<float> times;
+	auto numTimes = GetTimeCount();
+	times.reserve(numTimes);
+	for(auto i = decltype(numTimes) {0u}; i < numTimes; ++i)
+		times.push_back(*GetTime(i));
+	if(times.size() <= 1)
+		return true;
+	for(auto i = decltype(times.size()) {1u}; i < times.size(); ++i) {
+		auto t0 = times[i - 1];
+		auto t1 = times[i];
+		if(t0 >= t1) {
+			throw std::runtime_error {"Time values are not in order!"};
+			return false;
+		}
+		auto diff = t1 - t0;
+		if(fabsf(diff) < TIME_EPSILON * 0.5f) {
+			throw std::runtime_error {"Time values are too close!"};
+			return false;
+		}
+	}
+	return true;
+}
 void panima::Channel::TimeToLocalTimeFrame(float &inOutT) const
 {
 	inOutT -= m_timeFrame.startOffset;
