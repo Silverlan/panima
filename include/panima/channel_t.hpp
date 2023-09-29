@@ -43,6 +43,15 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const T *
 	if(!is_binary_compatible_type(udm::type_to_enum<T>(), GetValueType()))
 		throw std::invalid_argument {"Value type mismatch!"};
 	return InsertValues(n, times, values, sizeof(T), offset);
+template<typename T>
+void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, std::vector<T> &outValues) const
+{
+	if(!is_binary_compatible_type(udm::type_to_enum<T>(), GetValueType()))
+		throw std::invalid_argument {"Requested data type does not match channel value type!"};
+	GetDataInRange(tStart, tEnd, outTimes, [&outValues](size_t size) -> void * {
+		outValues.resize(size);
+		return outValues.data();
+	});
 }
 
 /////////////////////

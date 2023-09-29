@@ -305,6 +305,79 @@ const std::string *panima::Channel::GetValueExpression() const
 	return nullptr;
 }
 uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset)
+void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, const std::function<void *(size_t)> &fAllocateValueData) const
+{
+	::udm::visit_ng(GetValueType(), [this, tStart, tEnd, &outTimes, &fAllocateValueData](auto tag) {
+		using T = typename decltype(tag)::type;
+
+		auto n = GetValueCount();
+		auto getInterpolatedValue = [this, n](float t, uint32_t &outIdx, bool prefix) -> std::optional<std::pair<float, T>> {
+			float f;
+			auto indices = FindInterpolationIndices(t, f);
+			if(indices.first == std::numeric_limits<decltype(indices.first)>::max()) {
+				if(t <= *GetTime(0)) {
+					indices = {0, 0};
+					f = 0.f;
+				}
+				else {
+					indices = {n - 1, n - 1};
+					f = 0.f;
+				}
+			}
+
+			if(f == 0.f)
+				outIdx = indices.first;
+			else if(f == 1.f)
+				outIdx = indices.second;
+			else {
+				outIdx = prefix ? indices.second : indices.first;
+
+				auto time0 = *GetTime(indices.first);
+				auto time1 = *GetTime(indices.second);
+				auto &value0 = GetValue<T>(indices.first);
+				auto &value1 = GetValue<T>(indices.second);
+				T result;
+				udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
+				return std::pair<float, T> {umath::lerp(time0, time1, f), result};
+			}
+			return {};
+		};
+
+		if(n > 0) {
+			uint32_t idxStart;
+			auto prefixValue = getInterpolatedValue(tStart, idxStart, true);
+
+			uint32_t idxEnd;
+			auto postfixValue = getInterpolatedValue(tEnd, idxEnd, false);
+
+			auto count = idxEnd - idxStart + 1;
+			if(prefixValue)
+				++count;
+			if(postfixValue)
+				++count;
+
+			outTimes.resize(count);
+			auto *times = outTimes.data();
+			auto *values = static_cast<T *>(fAllocateValueData(count));
+			size_t idx = 0;
+			if(prefixValue) {
+				times[idx] = prefixValue->first;
+				values[idx] = prefixValue->second;
+				++idx;
+			}
+			for(auto i = idxStart; i <= idxEnd; ++i) {
+				times[idx] = *GetTime(i);
+				values[idx] = GetValue<T>(i);
+				++idx;
+			}
+			if(postfixValue) {
+				times[idx] = postfixValue->first;
+				values[idx] = postfixValue->second;
+				++idx;
+			}
+		}
+	});
+}
 {
 	if(n == 0)
 		return std::numeric_limits<uint32_t>::max();

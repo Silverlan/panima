@@ -142,6 +142,9 @@ namespace panima {
 		template<typename T, bool ENABLE_VALIDATION = true>
 		T GetInterpolatedValue(float t, void (*interpFunc)(const void *, const void *, double, void *)) const;
 
+		template<typename T>
+		void GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, std::vector<T> &outValues) const;
+
 		// Note: It is the caller's responsibility to ensure that the type matches the channel type
 		template<typename T>
 		    requires(is_supported_expression_type_v<T>) bool
@@ -171,6 +174,7 @@ namespace panima {
 		uint32_t AddValue(float t, const void *value);
 		uint32_t InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset);
 		std::pair<uint32_t, uint32_t> FindInterpolationIndices(float t, float &outInterpFactor, uint32_t pivotIndex, uint32_t recursionDepth) const;
+		void GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, const std::function<void *(size_t)> &fAllocateValueData) const;
 		udm::PProperty m_times = nullptr;
 		udm::PProperty m_values = nullptr;
 		std::unique_ptr<expression::ValueExpression> m_valueExpression; //default constructor is sufficient
