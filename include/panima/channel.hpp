@@ -167,7 +167,20 @@ namespace panima {
 
 		bool operator==(const Channel &other) const { return this == &other; }
 		bool operator!=(const Channel &other) const { return !operator==(other); }
+
+		template<typename T>
+		static void MergeDataArrays(const std::vector<float> &times0, const std::vector<T> values0, const std::vector<float> &times1, const std::vector<T> &values1, std::vector<float> &outTimes, std::vector<T> &outValues)
+		{
+			MergeDataArrays(
+			  times0.size(), times0.data(), reinterpret_cast<const uint8_t *>(values0.data()), times1.size(), times1.data(), reinterpret_cast<const uint8_t *>(values1.data()), outTimes,
+			  [&outValues](size_t size) -> uint8_t * {
+				  outValues.resize(size);
+				  return reinterpret_cast<uint8_t *>(outValues.data());
+			  },
+			  sizeof(T));
+		}
 	  private:
+		static void MergeDataArrays(uint32_t n0, const float *times0, const uint8_t *values0, uint32_t n1, const float *times1, const uint8_t *values1, std::vector<float> &outTimes, const std::function<uint8_t *(size_t)> &fAllocateValueData, size_t valueStride);
 		void TimeToLocalTimeFrame(float &inOutT) const;
 		template<typename T>
 		bool DoApplyValueExpression(double time, uint32_t timeIndex, T &inOutVal) const;

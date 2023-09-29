@@ -305,6 +305,35 @@ const std::string *panima::Channel::GetValueExpression() const
 	return nullptr;
 }
 uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset)
+void panima::Channel::MergeDataArrays(uint32_t n0, const float *times0, const uint8_t *values0, uint32_t n1, const float *times1, const uint8_t *values1, std::vector<float> &outTimes, const std::function<uint8_t *(size_t)> &fAllocateValueData, size_t valueStride)
+{
+	outTimes.resize(n0 + n1);
+	auto *times = outTimes.data();
+	auto *values = fAllocateValueData(outTimes.size());
+	size_t idx0 = 0;
+	size_t idx1 = 0;
+	size_t outIdx = 0;
+	while(idx0 < n0 || idx1 < n1) {
+		if(idx1 >= n1 || times0[idx0] < times1[idx1]) {
+			if(outIdx == 0 || umath::abs(times0[idx0] - times[outIdx - 1]) > TIME_EPSILON) {
+				times[outIdx] = times0[idx0];
+				memcpy(values + outIdx * valueStride, values0 + idx0 * valueStride, valueStride);
+				++outIdx;
+			}
+			++idx0;
+		}
+		else {
+			if(outIdx == 0 || umath::abs(times1[idx1] - times[outIdx - 1]) > TIME_EPSILON) {
+				times[outIdx] = times1[idx1];
+				memcpy(values + outIdx * valueStride, values1 + idx0 * valueStride, valueStride);
+				++outIdx;
+			}
+			++idx1;
+		}
+	}
+	outTimes.resize(outIdx);
+	fAllocateValueData(outIdx);
+}
 void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, const std::function<void *(size_t)> &fAllocateValueData) const
 {
 	::udm::visit_ng(GetValueType(), [this, tStart, tEnd, &outTimes, &fAllocateValueData](auto tag) {
