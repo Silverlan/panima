@@ -38,11 +38,13 @@ uint32_t panima::Channel::AddValue(float t, const T &value)
 }
 
 template<typename T>
-uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const T *values, float offset)
+uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const T *values, float offset, InsertFlags flags)
 {
 	if(!is_binary_compatible_type(udm::type_to_enum<T>(), GetValueType()))
 		throw std::invalid_argument {"Value type mismatch!"};
-	return InsertValues(n, times, values, sizeof(T), offset);
+	return InsertValues(n, times, values, sizeof(T), offset, flags);
+}
+
 template<typename T>
 void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, std::vector<T> &outValues) const
 {

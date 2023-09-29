@@ -61,6 +61,7 @@ add_include_dir(sharedutils)
 add_include_dir(mathutil)
 add_include_dir(vfilesystem)
 add_include_dir(util_udm)
+add_include_dir(cppbezierfit)
 
 add_include_dir(glm)
 

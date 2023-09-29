@@ -11,7 +11,7 @@
 #include <udm.hpp>
 #include <sharedutils/util_uri.hpp>
 #include <sharedutils/util_string.h>
-
+#include <bezier_fit.hpp>
 panima::ChannelPath::ChannelPath(const std::string &ppath)
 {
 	uriparser::Uri uri {ppath};
@@ -304,7 +304,6 @@ const std::string *panima::Channel::GetValueExpression() const
 		return &m_valueExpression->expression;
 	return nullptr;
 }
-uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset)
 void panima::Channel::MergeDataArrays(uint32_t n0, const float *times0, const uint8_t *values0, uint32_t n1, const float *times1, const uint8_t *values1, std::vector<float> &outTimes, const std::function<uint8_t *(size_t)> &fAllocateValueData, size_t valueStride)
 {
 	outTimes.resize(n0 + n1);
@@ -407,9 +406,70 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 		}
 	});
 }
+void panima::Channel::Decimate(float error)
+{
+	auto n = GetTimeCount();
+	if(n < 2)
+		return;
+	Decimate(*GetTime(0), *GetTime(n - 1), error);
+}
+void panima::Channel::Decimate(float tStart, float tEnd, float error)
+{
+	using T = Vector3;
+	std::vector<float> times;
+	std::vector<T> values;
+	GetDataInRange<T>(tStart, tEnd, times, values);
+	ClearRange(tStart, tEnd, true);
+
+	// We need to decimate each component of the value separately, then merge the reduced values
+	auto valueType = GetValueType();
+	auto numComp = udm::get_numeric_component_count(valueType);
+	for(auto c = decltype(numComp) {0u}; c < numComp; ++c) {
+		std::vector<bezierfit::VECTOR> tmpValues;
+		tmpValues.reserve(times.size());
+		// TODO: Re-scale?
+		for(auto i = decltype(times.size()) {0u}; i < times.size(); ++i)
+			tmpValues.push_back({times[i], udm::get_numeric_component(values[i], c)});
+		auto reduced = bezierfit::reduce(tmpValues, error);
+
+		// Calculate interpolated values for the reduced timestamps
+		std::vector<T> newValues;
+		std::vector<float> newTimes;
+		for(auto &v : reduced) {
+			auto value = GetInterpolatedValue<T>(v.x);
+			newTimes.push_back(v.x);
+			newValues.push_back(value);
+		}
+
+		// Merge components back together
+		InsertValues<T>(newTimes.size(), newTimes.data(), newValues.data(), 0.f, InsertFlags::None);
+	}
+}
+uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset, InsertFlags flags)
 {
 	if(n == 0)
 		return std::numeric_limits<uint32_t>::max();
+	if(umath::is_flag_set(flags, InsertFlags::ClearExistingDataInRange) == false) {
+		auto tStart = times[0];
+		auto tEnd = times[n - 1];
+		using T = float;
+		std::vector<float> newTimes;
+		std::vector<T> newValues;
+		GetDataInRange(tStart, tEnd, newTimes, newValues);
+
+		std::vector<float> mergedTimes;
+		std::vector<T> mergedValues;
+		MergeDataArrays(
+		  newTimes.size(), newTimes.data(), reinterpret_cast<uint8_t *>(newValues.data()), n, times, static_cast<const uint8_t *>(values), mergedTimes,
+		  [&mergedValues](size_t size) -> uint8_t * {
+			  mergedValues.resize(size);
+			  return reinterpret_cast<uint8_t *>(mergedValues.data());
+		  },
+		  sizeof(T));
+
+		umath::set_flag(flags, InsertFlags::ClearExistingDataInRange);
+		return InsertValues(mergedTimes.size(), mergedTimes.data(), mergedValues.data(), valueStride, offset, flags);
+	}
 	if(offset != 0.f) {
 		std::vector<float> timesWithOffset;
 		timesWithOffset.resize(n);
@@ -419,7 +479,7 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 	}
 	auto startTime = times[0];
 	auto endTime = times[n - 1];
-	ClearRange(startTime -TIME_EPSILON, endTime +TIME_EPSILON, false);
+	ClearRange(startTime - TIME_EPSILON, endTime + TIME_EPSILON, false);
 	float f;
 	auto indices = FindInterpolationIndices(times[0], f);
 	auto startIndex = indices.second;
@@ -434,7 +494,7 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 	auto *pValues = static_cast<const uint8_t *>(values);
 
 	// Move up current values
-	for(auto i = static_cast<int64_t>(numNewValues - 1); i >= startIndex +n; --i) {
+	for(auto i = static_cast<int64_t>(numNewValues - 1); i >= startIndex + n; --i) {
 		auto iSrc = i - n;
 		auto iDst = i;
 		timesArray.SetValue(iDst, static_cast<const void *>(timesArray.GetValuePtr(iSrc)));
@@ -449,6 +509,9 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 		valueArray.SetValue(iDst, static_cast<const void *>(pValues));
 		pValues += valueStride;
 	}
+
+	if(umath::is_flag_set(flags, InsertFlags::DecimateInsertedData))
+		Decimate(startTime, endTime);
 	return startIndex;
 }
 uint32_t panima::Channel::AddValue(float t, const void *value)

@@ -67,6 +67,12 @@ namespace panima {
 			std::vector<uint8_t> &m_values;
 		};
 
+		enum class InsertFlags : uint8_t {
+			None = 0u,
+			ClearExistingDataInRange = 1u,
+			DecimateInsertedData = ClearExistingDataInRange << 1u,
+		};
+
 		static constexpr auto VALUE_EPSILON = 0.001f;
 		static constexpr float TIME_EPSILON = 0.0001f;
 		Channel();
@@ -84,7 +90,7 @@ namespace panima {
 		template<typename T>
 		uint32_t AddValue(float t, const T &value);
 		template<typename T>
-		uint32_t InsertValues(uint32_t n, const float *times, const T *values, float offset = 0.f);
+		uint32_t InsertValues(uint32_t n, const float *times, const T *values, float offset = 0.f, InsertFlags flags = InsertFlags::ClearExistingDataInRange);
 
 		udm::Array &GetTimesArray();
 		const udm::Array &GetTimesArray() const { return const_cast<Channel *>(this)->GetTimesArray(); }
@@ -145,6 +151,9 @@ namespace panima {
 		template<typename T>
 		void GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, std::vector<T> &outValues) const;
 
+		void Decimate(float tStart, float tEnd, float error = 0.03f);
+		void Decimate(float error = 0.03f);
+
 		// Note: It is the caller's responsibility to ensure that the type matches the channel type
 		template<typename T>
 		    requires(is_supported_expression_type_v<T>) bool
@@ -185,7 +194,7 @@ namespace panima {
 		template<typename T>
 		bool DoApplyValueExpression(double time, uint32_t timeIndex, T &inOutVal) const;
 		uint32_t AddValue(float t, const void *value);
-		uint32_t InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset);
+		uint32_t InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset, InsertFlags flags = InsertFlags::ClearExistingDataInRange);
 		std::pair<uint32_t, uint32_t> FindInterpolationIndices(float t, float &outInterpFactor, uint32_t pivotIndex, uint32_t recursionDepth) const;
 		void GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, const std::function<void *(size_t)> &fAllocateValueData) const;
 		udm::PProperty m_times = nullptr;
@@ -221,6 +230,8 @@ namespace panima {
 	ArrayFloatIterator begin(const udm::Array &a);
 	ArrayFloatIterator end(const udm::Array &a);
 };
+
+REGISTER_BASIC_BITWISE_OPERATORS(panima::Channel::InsertFlags)
 
 std::ostream &operator<<(std::ostream &out, const panima::Channel &o);
 std::ostream &operator<<(std::ostream &out, const panima::TimeFrame &o);
