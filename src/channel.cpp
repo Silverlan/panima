@@ -313,22 +313,25 @@ void panima::Channel::MergeDataArrays(uint32_t n0, const float *times0, const ui
 	size_t idx1 = 0;
 	size_t outIdx = 0;
 	while(idx0 < n0 || idx1 < n1) {
-		if(idx1 >= n1 || times0[idx0] < times1[idx1]) {
-			if(outIdx == 0 || umath::abs(times0[idx0] - times[outIdx - 1]) > TIME_EPSILON) {
-				times[outIdx] = times0[idx0];
-				memcpy(values + outIdx * valueStride, values0 + idx0 * valueStride, valueStride);
-				++outIdx;
+		if(idx0 < n0) {
+			if(idx1 >= n1 || times0[idx0] < times1[idx1]) {
+				if(outIdx == 0 || umath::abs(times0[idx0] - times[outIdx - 1]) > TIME_EPSILON) {
+					times[outIdx] = times0[idx0];
+					memcpy(values + outIdx * valueStride, values0 + idx0 * valueStride, valueStride);
+					++outIdx;
+				}
+				++idx0;
+				continue;
 			}
-			++idx0;
 		}
-		else {
-			if(outIdx == 0 || umath::abs(times1[idx1] - times[outIdx - 1]) > TIME_EPSILON) {
-				times[outIdx] = times1[idx1];
-				memcpy(values + outIdx * valueStride, values1 + idx0 * valueStride, valueStride);
-				++outIdx;
-			}
-			++idx1;
+
+		assert(idx1 < n1);
+		if(outIdx == 0 || umath::abs(times1[idx1] - times[outIdx - 1]) > TIME_EPSILON) {
+			times[outIdx] = times1[idx1];
+			memcpy(values + outIdx * valueStride, values1 + idx1 * valueStride, valueStride);
+			++outIdx;
 		}
+		++idx1;
 	}
 	outTimes.resize(outIdx);
 	fAllocateValueData(outIdx);
@@ -415,35 +418,39 @@ void panima::Channel::Decimate(float error)
 }
 void panima::Channel::Decimate(float tStart, float tEnd, float error)
 {
-	using T = Vector3;
-	std::vector<float> times;
-	std::vector<T> values;
-	GetDataInRange<T>(tStart, tEnd, times, values);
-	ClearRange(tStart, tEnd, true);
+	return udm::visit_ng(GetValueType(), [this, tStart, tEnd, error](auto tag) {
+		using T = typename decltype(tag)::type;
+		using TValue = std::conditional_t<std::is_same_v<T, bool>, uint8_t, T>;
+		if constexpr(is_animatable_type(udm::type_to_enum<TValue>())) {
+			std::vector<float> times;
+			std::vector<TValue> values;
+			GetDataInRange<TValue>(tStart, tEnd, times, values);
+			ClearRange(tStart, tEnd, true);
 
-	// We need to decimate each component of the value separately, then merge the reduced values
-	auto valueType = GetValueType();
-	auto numComp = udm::get_numeric_component_count(valueType);
-	for(auto c = decltype(numComp) {0u}; c < numComp; ++c) {
-		std::vector<bezierfit::VECTOR> tmpValues;
-		tmpValues.reserve(times.size());
-		// TODO: Re-scale?
-		for(auto i = decltype(times.size()) {0u}; i < times.size(); ++i)
-			tmpValues.push_back({times[i], udm::get_numeric_component(values[i], c)});
-		auto reduced = bezierfit::reduce(tmpValues, error);
+			// We need to decimate each component of the value separately, then merge the reduced values
+			auto valueType = GetValueType();
+			auto numComp = udm::get_numeric_component_count(valueType);
+			for(auto c = decltype(numComp) {0u}; c < numComp; ++c) {
+				std::vector<bezierfit::VECTOR> tmpValues;
+				tmpValues.reserve(times.size());
+				for(auto i = decltype(times.size()) {0u}; i < times.size(); ++i)
+					tmpValues.push_back({times[i], udm::get_numeric_component(values[i], c)});
+				auto reduced = bezierfit::reduce(tmpValues, error);
 
-		// Calculate interpolated values for the reduced timestamps
-		std::vector<T> newValues;
-		std::vector<float> newTimes;
-		for(auto &v : reduced) {
-			auto value = GetInterpolatedValue<T>(v.x);
-			newTimes.push_back(v.x);
-			newValues.push_back(value);
+				// Calculate interpolated values for the reduced timestamps
+				std::vector<TValue> newValues;
+				std::vector<float> newTimes;
+				for(auto &v : reduced) {
+					auto value = GetInterpolatedValue<TValue>(v.x);
+					newTimes.push_back(v.x);
+					newValues.push_back(value);
+				}
+
+				// Merge components back together
+				InsertValues<TValue>(newTimes.size(), newTimes.data(), newValues.data(), 0.f, InsertFlags::None);
+			}
 		}
-
-		// Merge components back together
-		InsertValues<T>(newTimes.size(), newTimes.data(), newValues.data(), 0.f, InsertFlags::None);
-	}
+	});
 }
 uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset, InsertFlags flags)
 {
@@ -452,23 +459,27 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 	if(umath::is_flag_set(flags, InsertFlags::ClearExistingDataInRange) == false) {
 		auto tStart = times[0];
 		auto tEnd = times[n - 1];
-		using T = float;
-		std::vector<float> newTimes;
-		std::vector<T> newValues;
-		GetDataInRange(tStart, tEnd, newTimes, newValues);
+		return udm::visit_ng(GetValueType(), [this, tStart, tEnd, n, times, values, valueStride, offset, flags](auto tag) {
+			using T = typename decltype(tag)::type;
+			using TValue = std::conditional_t<std::is_same_v<T, bool>, uint8_t, T>;
+			std::vector<float> newTimes;
+			std::vector<TValue> newValues;
+			GetDataInRange(tStart, tEnd, newTimes, newValues);
 
-		std::vector<float> mergedTimes;
-		std::vector<T> mergedValues;
-		MergeDataArrays(
-		  newTimes.size(), newTimes.data(), reinterpret_cast<uint8_t *>(newValues.data()), n, times, static_cast<const uint8_t *>(values), mergedTimes,
-		  [&mergedValues](size_t size) -> uint8_t * {
-			  mergedValues.resize(size);
-			  return reinterpret_cast<uint8_t *>(mergedValues.data());
-		  },
-		  sizeof(T));
+			std::vector<float> mergedTimes;
+			std::vector<TValue> mergedValues;
+			MergeDataArrays(
+			  newTimes.size(), newTimes.data(), reinterpret_cast<uint8_t *>(newValues.data()), n, times, static_cast<const uint8_t *>(values), mergedTimes,
+			  [&mergedValues](size_t size) -> uint8_t * {
+				  mergedValues.resize(size);
+				  return reinterpret_cast<uint8_t *>(mergedValues.data());
+			  },
+			  sizeof(TValue));
 
-		umath::set_flag(flags, InsertFlags::ClearExistingDataInRange);
-		return InsertValues(mergedTimes.size(), mergedTimes.data(), mergedValues.data(), valueStride, offset, flags);
+			auto newFlags = flags;
+			umath::set_flag(newFlags, InsertFlags::ClearExistingDataInRange);
+			return InsertValues(mergedTimes.size(), mergedTimes.data(), mergedValues.data(), valueStride, offset, newFlags);
+		});
 	}
 	if(offset != 0.f) {
 		std::vector<float> timesWithOffset;
