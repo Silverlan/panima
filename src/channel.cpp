@@ -338,6 +338,8 @@ void panima::Channel::MergeDataArrays(uint32_t n0, const float *times0, const ui
 }
 void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, const std::function<void *(size_t)> &fAllocateValueData) const
 {
+	if(tEnd < tStart)
+		return;
 	::udm::visit_ng(GetValueType(), [this, tStart, tEnd, &outTimes, &fAllocateValueData](auto tag) {
 		using T = typename decltype(tag)::type;
 
@@ -425,11 +427,14 @@ void panima::Channel::Decimate(float tStart, float tEnd, float error)
 			std::vector<float> times;
 			std::vector<TValue> values;
 			GetDataInRange<TValue>(tStart, tEnd, times, values);
-			ClearRange(tStart, tEnd, true);
 
 			// We need to decimate each component of the value separately, then merge the reduced values
 			auto valueType = GetValueType();
 			auto numComp = udm::get_numeric_component_count(valueType);
+			std::vector<std::vector<float>> newTimes;
+			std::vector<std::vector<TValue>> newValues;
+			newTimes.resize(numComp);
+			newValues.resize(numComp);
 			for(auto c = decltype(numComp) {0u}; c < numComp; ++c) {
 				std::vector<bezierfit::VECTOR> tmpValues;
 				tmpValues.reserve(times.size());
@@ -438,16 +443,26 @@ void panima::Channel::Decimate(float tStart, float tEnd, float error)
 				auto reduced = bezierfit::reduce(tmpValues, error);
 
 				// Calculate interpolated values for the reduced timestamps
-				std::vector<TValue> newValues;
-				std::vector<float> newTimes;
+				auto &cValues = newValues[c];
+				auto &cTimes = newTimes[c];
+				cValues.reserve(reduced.size());
+				cTimes.reserve(reduced.size());
 				for(auto &v : reduced) {
 					auto value = GetInterpolatedValue<TValue>(v.x);
-					newTimes.push_back(v.x);
-					newValues.push_back(value);
+					udm::set_numeric_component(value, c, v.y);
+					cTimes.push_back(v.x);
+					cValues.push_back(value);
 				}
+			}
 
-				// Merge components back together
-				InsertValues<TValue>(newTimes.size(), newTimes.data(), newValues.data(), 0.f, InsertFlags::None);
+			// Clear values in the target range
+			ClearRange(tStart, tEnd, true);
+
+			// Merge components back together
+			for(auto c = decltype(numComp) {0u}; c < numComp; ++c) {
+				auto &cValues = newValues[c];
+				auto &cTimes = newTimes[c];
+				InsertValues<TValue>(cTimes.size(), cTimes.data(), cValues.data(), 0.f, InsertFlags::None);
 			}
 		}
 	});
