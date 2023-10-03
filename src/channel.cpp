@@ -456,6 +456,13 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 {
 	if(n == 0)
 		return std::numeric_limits<uint32_t>::max();
+	if(offset != 0.f) {
+		std::vector<float> timesWithOffset;
+		timesWithOffset.resize(n);
+		for(auto i = decltype(n) {0u}; i < n; ++i)
+			timesWithOffset[i] = times[i] + offset;
+		return InsertValues(n, timesWithOffset.data(), values, valueStride, 0.f);
+	}
 	if(umath::is_flag_set(flags, InsertFlags::ClearExistingDataInRange) == false) {
 		auto tStart = times[0];
 		auto tEnd = times[n - 1];
@@ -480,13 +487,6 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 			umath::set_flag(newFlags, InsertFlags::ClearExistingDataInRange);
 			return InsertValues(mergedTimes.size(), mergedTimes.data(), mergedValues.data(), valueStride, offset, newFlags);
 		});
-	}
-	if(offset != 0.f) {
-		std::vector<float> timesWithOffset;
-		timesWithOffset.resize(n);
-		for(auto i = decltype(n) {0u}; i < n; ++i)
-			timesWithOffset[i] = times[i] + offset;
-		return InsertValues(n, timesWithOffset.data(), values, valueStride, 0.f);
 	}
 	auto startTime = times[0];
 	auto endTime = times[n - 1];
