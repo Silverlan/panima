@@ -19,9 +19,11 @@ namespace panima {
 	struct ChannelPath {
 		ChannelPath() = default;
 		ChannelPath(const std::string &path);
+		ChannelPath(const ChannelPath &other);
 
 		bool operator==(const ChannelPath &other) const;
 		bool operator!=(const ChannelPath &other) const { return !const_cast<ChannelPath *>(this)->operator==(other); }
+		ChannelPath &operator=(const ChannelPath &other);
 
 		std::vector<std::string> *GetComponents() { return m_components.get(); }
 		const std::vector<std::string> *GetComponents() const { return const_cast<ChannelPath *>(this)->GetComponents(); }

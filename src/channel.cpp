@@ -36,7 +36,16 @@ panima::ChannelPath::ChannelPath(const std::string &ppath)
 		}
 	}
 }
+panima::ChannelPath::ChannelPath(const ChannelPath &other) { operator=(other); }
 bool panima::ChannelPath::operator==(const ChannelPath &other) const { return path == other.path && ((!m_components && !other.m_components) || (m_components && other.m_components && *m_components == *other.m_components)); }
+panima::ChannelPath &panima::ChannelPath::operator=(const ChannelPath &other)
+{
+	path = other.path;
+	m_components = nullptr;
+	if(other.m_components)
+		m_components = std::make_unique<std::vector<std::string>>(*other.m_components);
+	return *this;
+}
 std::string panima::ChannelPath::ToUri(bool includeScheme) const
 {
 	std::string uri;
@@ -96,6 +105,8 @@ panima::Channel::Channel(Channel &other) : Channel {} { operator=(other); }
 panima::Channel::~Channel() {}
 panima::Channel &panima::Channel::operator=(Channel &other)
 {
+	interpolation = other.interpolation;
+	targetPath = other.targetPath;
 	m_times = other.m_times->Copy(true);
 	m_values = other.m_values->Copy(true);
 	m_valueExpression = nullptr;
