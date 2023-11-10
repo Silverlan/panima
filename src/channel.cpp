@@ -251,6 +251,11 @@ void panima::Channel::MergeValues(const Channel &other)
 		});
 	});
 }
+void panima::Channel::ClearAnimationData()
+{
+	GetTimesArray().Resize(0);
+	GetValueArray().Resize(0);
+}
 bool panima::Channel::ClearRange(float startTime, float endTime, bool addCaps)
 {
 	if(GetTimesArray().IsEmpty())

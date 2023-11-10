@@ -109,6 +109,7 @@ namespace panima {
 		uint32_t GetValueCount() const;
 		std::optional<float> GetTime(uint32_t idx) const;
 		bool ClearRange(float startTime, float endTime, bool addCaps = true);
+		void ClearAnimationData();
 		void MergeValues(const Channel &other);
 
 		bool Save(udm::LinkedPropertyWrapper &prop) const;
@@ -158,8 +159,8 @@ namespace panima {
 
 		// Note: It is the caller's responsibility to ensure that the type matches the channel type
 		template<typename T>
-		    requires(is_supported_expression_type_v<T>) bool
-		ApplyValueExpression(double time, uint32_t timeIndex, T &inOutVal) const
+		    requires(is_supported_expression_type_v<T>)
+		bool ApplyValueExpression(double time, uint32_t timeIndex, T &inOutVal) const
 		{
 			return DoApplyValueExpression<T>(time, timeIndex, inOutVal);
 		}

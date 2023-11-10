@@ -31,6 +31,14 @@ void panima::Animation::RemoveChannel(std::string path)
 	m_channels.erase(it);
 }
 
+void panima::Animation::RemoveChannel(const Channel &channel)
+{
+	auto it = std::find_if(m_channels.begin(), m_channels.end(), [&channel](const std::shared_ptr<Channel> &channelOther) { return &channel == channelOther.get(); });
+	if(it == m_channels.end())
+		return;
+	m_channels.erase(it);
+}
+
 void panima::Animation::AddChannel(Channel &channel)
 {
 	auto it = std::find_if(m_channels.begin(), m_channels.end(), [&channel](const std::shared_ptr<Channel> &channelOther) { return channelOther->targetPath == channel.targetPath; });
