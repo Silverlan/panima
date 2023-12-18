@@ -434,6 +434,23 @@ void panima::Channel::Decimate(float error)
 		return;
 	Decimate(*GetTime(0), *GetTime(n - 1), error);
 }
+std::optional<uint32_t> panima::Channel::InsertSample(float t)
+{
+	if(GetTimeCount() == 0)
+		return {};
+	float f;
+	auto indices = FindInterpolationIndices(t, f);
+	if(f == 0.f)
+		return indices.first; // There already is a sample at this timestamp
+	return udm::visit_ng(GetValueType(), [this, t](auto tag) -> std::optional<uint32_t> {
+		using T = typename decltype(tag)::type;
+		if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
+			auto val = GetInterpolatedValue<T>(t);
+			return AddValue<T>(t, val);
+		}
+		return {};
+	});
+}
 void panima::Channel::Decimate(float tStart, float tEnd, float error)
 {
 	return udm::visit_ng(GetValueType(), [this, tStart, tEnd, error](auto tag) {
