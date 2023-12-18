@@ -158,6 +158,8 @@ namespace panima {
 		void Decimate(float error = 0.03f);
 
 		std::optional<uint32_t> InsertSample(float t);
+		void ScaleTimeInRange(float tStart, float tEnd, double scale);
+
 		// Note: It is the caller's responsibility to ensure that the type matches the channel type
 		template<typename T>
 		    requires(is_supported_expression_type_v<T>)

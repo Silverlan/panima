@@ -451,6 +451,29 @@ std::optional<uint32_t> panima::Channel::InsertSample(float t)
 		return {};
 	});
 }
+void panima::Channel::ScaleTimeInRange(float tStart, float tEnd, double scale)
+{
+	auto idxStart = InsertSample(tStart);
+	auto idxEnd = InsertSample(tEnd);
+	if(!idxStart || !idxEnd)
+		return;
+	auto tOrig = (tEnd - tStart);
+	auto tScaled = (tEnd - tStart) * scale;
+	auto postOffset = tScaled - tOrig;
+	auto &times = GetTimesArray();
+	// Scale all times within the range [tStart,tEnd]
+	for(auto idx = *idxStart; idx < *idxEnd; ++idx) {
+		auto &t = times.GetValue<float>(idx);
+		t = tStart + (t - tStart) * scale;
+	}
+
+	auto n = GetTimeCount();
+	// Shift all time values after idxEnd by postOffset
+	for(auto idx = *idxEnd; idx < n; ++idx) {
+		auto &t = times.GetValue<float>(idx);
+		t += postOffset;
+	}
+}
 void panima::Channel::Decimate(float tStart, float tEnd, float error)
 {
 	return udm::visit_ng(GetValueType(), [this, tStart, tEnd, error](auto tag) {
