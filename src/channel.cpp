@@ -451,6 +451,34 @@ std::optional<uint32_t> panima::Channel::InsertSample(float t)
 		return {};
 	});
 }
+void panima::Channel::ShiftTimeInRange(float tStart, float tEnd, float shiftAmount)
+{
+	auto idxStart = InsertSample(tStart);
+	auto idxEnd = InsertSample(tEnd);
+	if(!idxStart || !idxEnd)
+		return;
+	if(shiftAmount == 0)
+		return;
+	if(shiftAmount < 0) {
+		// Clear the shift range, but keep the value at tStart. We use epsilon *1.5 to prevent
+		// potential edge cases because of precision errors
+		ClearRange(tStart + shiftAmount, tStart - TIME_EPSILON * 1.5f, false);
+	}
+	else
+		ClearRange(tEnd + TIME_EPSILON * 1.5f, tEnd + shiftAmount, false);
+
+	auto &times = GetTimesArray();
+	// Indices may have changed due to cleared ranges
+	idxStart = FindValueIndex(tStart);
+	idxEnd = FindValueIndex(tEnd);
+	assert(idxStart.has_value() && idxEnd.has_value());
+	if(!idxStart || !idxEnd)
+		return;
+	for(auto idx = *idxStart; idx < *idxEnd; ++idx) {
+		auto &t = times.GetValue<float>(idx);
+		t += shiftAmount;
+	}
+}
 void panima::Channel::ScaleTimeInRange(float tStart, float tEnd, double scale)
 {
 	auto idxStart = InsertSample(tStart);

@@ -159,6 +159,7 @@ namespace panima {
 
 		std::optional<uint32_t> InsertSample(float t);
 		void ScaleTimeInRange(float tStart, float tEnd, double scale);
+		void ShiftTimeInRange(float tStart, float tEnd, float shiftAmount);
 
 		// Note: It is the caller's responsibility to ensure that the type matches the channel type
 		template<typename T>
