@@ -187,7 +187,7 @@ panima::expression::ValueExpression::ValueExpression(const ValueExpression &othe
 	expression = other.expression;
 	m_type = other.m_type;
 	std::string err;
-	Initialize(other.m_type,err);
+	Initialize(other.m_type, err);
 }
 
 panima::expression::ValueExpression::~ValueExpression() { expr.f_valueAt = nullptr; }

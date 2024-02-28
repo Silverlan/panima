@@ -21,6 +21,7 @@ panima::ChannelPath::ChannelPath(const std::string &ppath)
 	auto strPath = uri.path();
 	if(!strPath.empty() && strPath.front() == '/')
 		strPath.erase(strPath.begin());
+	ustring::replace(strPath, "%20", " ");
 	path = std::move(strPath);
 	auto strQueries = uri.query();
 	std::vector<std::string> queries;
