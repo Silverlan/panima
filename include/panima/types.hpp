@@ -40,11 +40,7 @@ namespace panima {
 	struct Channel;
 	class Manager;
 	class Player;
-	class Pose;
 	struct Slice;
-	using BoneId = uint16_t;
-	struct Bone;
-	class Skeleton;
 
 	using PPlayer = std::shared_ptr<Player>;
 
