@@ -452,6 +452,31 @@ std::optional<uint32_t> panima::Channel::InsertSample(float t)
 		return {};
 	});
 }
+void panima::Channel::TransformGlobal(const umath::ScaledTransform &transform)
+{
+	auto valueType = GetValueType();
+	auto numTimes = GetTimeCount();
+	switch(valueType) {
+	case udm::Type::Vector3:
+		{
+			for(size_t i = 0; i < numTimes; ++i) {
+				auto t = *GetTime(i);
+				auto &val = GetValue<Vector3>(i);
+				val = transform * val;
+			}
+			break;
+		}
+	case udm::Type::Quaternion:
+		{
+			for(size_t i = 0; i < numTimes; ++i) {
+				auto t = *GetTime(i);
+				auto &val = GetValue<Quat>(i);
+				val = transform * val;
+			}
+			break;
+		}
+	}
+}
 void panima::Channel::ShiftTimeInRange(float tStart, float tEnd, float shiftAmount)
 {
 	auto idxStart = InsertSample(tStart);

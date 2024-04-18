@@ -161,6 +161,8 @@ namespace panima {
 		void ScaleTimeInRange(float tStart, float tEnd, double scale);
 		void ShiftTimeInRange(float tStart, float tEnd, float shiftAmount);
 
+		void TransformGlobal(const umath::ScaledTransform &transform);
+
 		// Note: It is the caller's responsibility to ensure that the type matches the channel type
 		template<typename T>
 		    requires(is_supported_expression_type_v<T>)
