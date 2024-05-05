@@ -440,9 +440,9 @@ std::optional<uint32_t> panima::Channel::InsertSample(float t)
 	if(GetTimeCount() == 0)
 		return {};
 	float f;
-	auto indices = FindInterpolationIndices(t, f);
-	if(f == 0.f)
-		return indices.first; // There already is a sample at this timestamp
+	auto idx = FindValueIndex(t);
+	if(idx)
+		return *idx; // There already is a sample at this timestamp
 	return udm::visit_ng(GetValueType(), [this, t](auto tag) -> std::optional<uint32_t> {
 		using T = typename decltype(tag)::type;
 		if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
