@@ -353,11 +353,11 @@ void panima::Channel::MergeDataArrays(uint32_t n0, const float *times0, const ui
 	outTimes.resize(outIdx);
 	fAllocateValueData(outIdx);
 }
-void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, const std::function<void *(size_t)> &fAllocateValueData) const
+void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float> *optOutTimes, const std::function<void *(size_t)> &optAllocateValueData) const
 {
 	if(tEnd < tStart)
 		return;
-	::udm::visit_ng(GetValueType(), [this, tStart, tEnd, &outTimes, &fAllocateValueData](auto tag) {
+	::udm::visit_ng(GetValueType(), [this, tStart, tEnd, optOutTimes, &optAllocateValueData](auto tag) {
 		using T = typename decltype(tag)::type;
 
 		auto n = GetValueCount();
@@ -406,28 +406,40 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 			if(postfixValue)
 				++count;
 
-			outTimes.resize(count);
-			auto *times = outTimes.data();
-			auto *values = static_cast<T *>(fAllocateValueData(count));
+			float *times = nullptr;
+			if(optOutTimes) {
+				optOutTimes->resize(count);
+				times = optOutTimes->data();
+			}
+			T *values = nullptr;
+			if(optAllocateValueData)
+				values = static_cast<T *>(optAllocateValueData(count));
 			size_t idx = 0;
 			if(prefixValue) {
-				times[idx] = prefixValue->first;
-				values[idx] = prefixValue->second;
+				if(times)
+					times[idx] = prefixValue->first;
+				if(values)
+					values[idx] = prefixValue->second;
 				++idx;
 			}
 			for(auto i = idxStart; i <= idxEnd; ++i) {
-				times[idx] = *GetTime(i);
-				values[idx] = GetValue<T>(i);
+				if(times)
+					times[idx] = *GetTime(i);
+				if(values)
+					values[idx] = GetValue<T>(i);
 				++idx;
 			}
 			if(postfixValue) {
-				times[idx] = postfixValue->first;
-				values[idx] = postfixValue->second;
+				if(times)
+					times[idx] = postfixValue->first;
+				if(values)
+					values[idx] = postfixValue->second;
 				++idx;
 			}
 		}
 	});
 }
+void panima::Channel::GetTimesInRange(float tStart, float tEnd, std::vector<float> &outTimes) const { GetDataInRange(tStart, tEnd, &outTimes, nullptr); }
 void panima::Channel::Decimate(float error)
 {
 	auto n = GetTimeCount();
@@ -477,55 +489,195 @@ void panima::Channel::TransformGlobal(const umath::ScaledTransform &transform)
 		}
 	}
 }
-void panima::Channel::ShiftTimeInRange(float tStart, float tEnd, float shiftAmount)
+void panima::Channel::RemoveValueAtIndex(uint32_t idx)
 {
-	auto idxStart = InsertSample(tStart);
-	auto idxEnd = InsertSample(tEnd);
+	auto &times = GetTimesArray();
+	times.RemoveValue(idx);
+
+	auto &values = GetValueArray();
+	values.RemoveValue(idx);
+}
+void panima::Channel::ResolveDuplicates(float t)
+{
+	for(;;) {
+		auto idx = FindValueIndex(t);
+		if(!idx)
+			break;
+		auto t = *GetTime(*idx);
+		auto numTimes = GetTimeCount();
+		if(*idx > 0) {
+			auto tPrev = *GetTime(*idx - 1);
+			if(umath::abs(t - tPrev) <= TIME_EPSILON) {
+				RemoveValueAtIndex(*idx - 1);
+				continue;
+			}
+		}
+		if(numTimes > 1 && *idx < numTimes - 1) {
+			auto tNext = *GetTime(*idx + 1);
+			if(umath::abs(t - tNext) <= TIME_EPSILON) {
+				RemoveValueAtIndex(*idx + 1);
+				continue;
+			}
+		}
+		break;
+	}
+}
+std::pair<std::optional<uint32_t>, std::optional<uint32_t>> panima::Channel::GetBoundaryIndices(float tStart, float tEnd, bool retainBoundaries)
+{
+	if(!retainBoundaries) {
+		float f;
+		auto indicesStart = FindInterpolationIndices(tStart, f, 0);
+		if(indicesStart.first == std::numeric_limits<decltype(indicesStart.first)>::max())
+			return {};
+		f *= (*GetTime(indicesStart.second) - *GetTime(indicesStart.first));
+		auto startIdx = (f < TIME_EPSILON) ? indicesStart.first : indicesStart.second;
+
+		auto indicesEnd = FindInterpolationIndices(tEnd, f, startIdx);
+		if(indicesEnd.first == std::numeric_limits<decltype(indicesEnd.first)>::max())
+			return {};
+		f *= (*GetTime(indicesEnd.second) - *GetTime(indicesEnd.first));
+		auto endIdx = (umath::abs(f - *GetTime(indicesEnd.second)) < TIME_EPSILON) ? indicesEnd.second : indicesEnd.first;
+		auto tStartTs = *GetTime(startIdx);
+		auto tEndTs = *GetTime(endIdx);
+		auto tMin = tStart - TIME_EPSILON;
+		auto tMax = tEnd + TIME_EPSILON;
+		if(tStartTs < tMin || tStartTs > tMax || tEndTs < tMin || tEndTs > tMax)
+			return {};
+		return {startIdx, endIdx};
+	}
+	std::optional<uint32_t> idxStart = 0;
+	auto t0 = GetTime(*idxStart);
+	if(!t0)
+		return {};
+	if(*t0 < tStart - TIME_EPSILON)
+		idxStart = InsertSample(tStart);
+
+	std::optional<uint32_t> idxEnd = GetTimeCount() - 1;
+	auto t1 = GetTime(*idxEnd);
+	if(!t1)
+		return {};
+	if(*t1 > tEnd + TIME_EPSILON)
+		idxEnd = InsertSample(tEnd);
+	return {idxStart, idxEnd};
+}
+void panima::Channel::ShiftTimeInRange(float tStart, float tEnd, float shiftAmount, bool retainBoundaryValues)
+{
+	if(umath::abs(shiftAmount) <= TIME_EPSILON * 1.5f)
+		return;
+	auto [idxStart, idxEnd] = GetBoundaryIndices(tStart, tEnd, retainBoundaryValues);
 	if(!idxStart || !idxEnd)
 		return;
-	if(shiftAmount == 0)
-		return;
-	if(shiftAmount < 0) {
-		// Clear the shift range, but keep the value at tStart. We use epsilon *1.5 to prevent
-		// potential edge cases because of precision errors
-		ClearRange(tStart + shiftAmount, tStart - TIME_EPSILON * 1.5f, false);
+	tStart = *GetTime(*idxStart);
+	tEnd = *GetTime(*idxEnd);
+	// After shifting, we need to restore the value at the opposite boundary of the shift
+	// (e.g. if we're shifting left, we have to restore the right-most value and vice versa.)
+	std::shared_ptr<void> boundaryValue = nullptr;
+	if(retainBoundaryValues) {
+		udm::visit_ng(GetValueType(), [this, &boundaryValue, shiftAmount, &idxStart, &idxEnd](auto tag) {
+			using T = typename decltype(tag)::type;
+			auto val = GetValue<T>((shiftAmount < 0.f) ? *idxEnd : *idxStart);
+			boundaryValue = std::make_shared<T>(val);
+		});
+		if(shiftAmount < 0) {
+			// Clear the shift range, but keep the value at tStart. We use epsilon *1.5 to prevent
+			// potential edge cases because of precision errors
+			ClearRange(tStart + shiftAmount - TIME_EPSILON * 1.5f, tStart - TIME_EPSILON * 1.5f, false);
+		}
+		else
+			ClearRange(tEnd + TIME_EPSILON * 1.5f, tEnd + shiftAmount + TIME_EPSILON * 1.5f, false);
+
+		// Indices may have changed due to cleared ranges
+		idxStart = FindValueIndex(tStart);
+		idxEnd = FindValueIndex(tEnd);
+		assert(idxStart.has_value() && idxEnd.has_value());
 	}
-	else
-		ClearRange(tEnd + TIME_EPSILON * 1.5f, tEnd + shiftAmount, false);
 
 	auto &times = GetTimesArray();
-	// Indices may have changed due to cleared ranges
-	idxStart = FindValueIndex(tStart);
-	idxEnd = FindValueIndex(tEnd);
-	assert(idxStart.has_value() && idxEnd.has_value());
 	if(!idxStart || !idxEnd)
 		return;
-	for(auto idx = *idxStart; idx < *idxEnd; ++idx) {
+	for(auto idx = *idxStart; idx <= *idxEnd; ++idx) {
 		auto &t = times.GetValue<float>(idx);
 		t += shiftAmount;
 	}
+	ResolveDuplicates(*GetTime(*idxStart));
+	ResolveDuplicates(*GetTime(*idxEnd));
+	if(retainBoundaryValues) {
+		// Restore boundary value
+		udm::visit_ng(GetValueType(), [this, &boundaryValue, shiftAmount, tStart, tEnd](auto tag) {
+			using T = typename decltype(tag)::type;
+			AddValue<T>((shiftAmount < 0.f) ? tEnd : tStart, *static_cast<T *>(boundaryValue.get()));
+		});
+		ResolveDuplicates(tStart);
+		ResolveDuplicates(tEnd);
+	}
 }
-void panima::Channel::ScaleTimeInRange(float tStart, float tEnd, double scale)
+void panima::Channel::ScaleTimeInRange(float tStart, float tEnd, float tPivot, double scale, bool retainBoundaryValues)
 {
-	auto idxStart = InsertSample(tStart);
-	auto idxEnd = InsertSample(tEnd);
+	auto [idxStart, idxEnd] = GetBoundaryIndices(tStart, tEnd, retainBoundaryValues);
 	if(!idxStart || !idxEnd)
 		return;
-	auto tOrig = (tEnd - tStart);
-	auto tScaled = (tEnd - tStart) * scale;
-	auto postOffset = tScaled - tOrig;
-	auto &times = GetTimesArray();
-	// Scale all times within the range [tStart,tEnd]
-	for(auto idx = *idxStart; idx < *idxEnd; ++idx) {
-		auto &t = times.GetValue<float>(idx);
-		t = tStart + (t - tStart) * scale;
+	tStart = *GetTime(*idxStart);
+	tEnd = *GetTime(*idxEnd);
+
+	// After scaling, we need to restore the value at the boundaries where we are scaling
+	// away from the rest of the animation
+	std::shared_ptr<void> boundaryValueStart = nullptr;
+	std::shared_ptr<void> boundaryValueEnd = nullptr;
+	if(retainBoundaryValues) {
+		udm::visit_ng(GetValueType(), [this, &idxStart, &idxEnd, &boundaryValueStart, &boundaryValueEnd](auto tag) {
+			using T = typename decltype(tag)::type;
+			boundaryValueStart = std::make_shared<T>(GetValue<T>(*idxStart));
+			boundaryValueEnd = std::make_shared<T>(GetValue<T>(*idxEnd));
+		});
 	}
 
-	auto n = GetTimeCount();
-	// Shift all time values after idxEnd by postOffset
-	for(auto idx = *idxEnd; idx < n; ++idx) {
+	auto rescale = [tPivot, scale](double t) {
+		t -= tPivot;
+		t *= scale;
+		t += tPivot;
+		return t;
+	};
+	if(retainBoundaryValues) {
+		auto scaledStart = rescale(tStart);
+		if(scaledStart < tStart)
+			ClearRange(scaledStart, tStart - TIME_EPSILON * 1.5f, false);
+
+		auto scaledEnd = rescale(tEnd);
+		if(scaledEnd > tEnd)
+			ClearRange(tEnd + TIME_EPSILON * 1.5f, scaledEnd, false);
+
+		// Indices may have changed due to cleared ranges
+		idxStart = FindValueIndex(tStart);
+		idxEnd = FindValueIndex(tEnd);
+		assert(idxStart.has_value() && idxEnd.has_value());
+	}
+
+	auto &times = GetTimesArray();
+	if(!idxStart || !idxEnd)
+		return;
+	// Scale all times within the range [tStart,tEnd]
+	for(auto idx = *idxStart; idx <= *idxEnd; ++idx) {
 		auto &t = times.GetValue<float>(idx);
-		t += postOffset;
+		t = rescale(t);
+	}
+	ResolveDuplicates(*GetTime(*idxStart));
+	ResolveDuplicates(*GetTime(*idxEnd));
+
+	if(retainBoundaryValues) {
+		// Restore boundary values
+		udm::visit_ng(GetValueType(), [this, &boundaryValueStart, boundaryValueEnd, &times, &idxStart, &idxEnd, tStart, tEnd, tPivot, scale](auto tag) {
+			using T = typename decltype(tag)::type;
+			// If the scale is smaller than 1, we'll be pulled towards the pivot, otherwise we will be
+			// pushed away from it. In some cases this will create a 'hole' near the boundary that we have to plug.
+			// (e.g. If the pivot lies to the right of the start time, and the start time is being pulled towards it (i.e. pivot < 1.0),
+			// a hole will be left to the left of the start time.)
+			if((scale < 1.0 && tPivot >= tStart) || (scale > 1.0 && tPivot <= tStart))
+				AddValue<T>(tStart, *static_cast<T *>(boundaryValueStart.get()));
+			if((scale < 1.0 && tPivot <= tEnd) || (scale > 1.0 && tPivot >= tEnd))
+				AddValue<T>(tEnd, *static_cast<T *>(boundaryValueEnd.get()));
+		});
+		ResolveDuplicates(tStart);
+		ResolveDuplicates(tEnd);
 	}
 }
 void panima::Channel::Decimate(float tStart, float tEnd, float error)
@@ -725,6 +877,7 @@ bool panima::Channel::Validate() const
 		auto t1 = times[i];
 		if(t0 >= t1) {
 			throw std::runtime_error {"Time values are not in order!"};
+			const_cast<panima::Channel*>(this)->ResolveDuplicates(t0);
 			return false;
 		}
 		auto diff = t1 - t0;
@@ -814,6 +967,7 @@ std::optional<size_t> panima::Channel::FindValueIndex(float time, float epsilon)
 		if(indices.first == size - 1 && umath::abs(t.GetValue<float>(size - 1) - time) >= epsilon)
 			return {};
 	}
+	interpFactor *= (*GetTime(indices.second) - *GetTime(indices.first));
 	if(interpFactor < epsilon)
 		return indices.first;
 	if(interpFactor > 1.f - epsilon)

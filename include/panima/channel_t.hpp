@@ -50,7 +50,7 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 {
 	if(!is_binary_compatible_type(udm::type_to_enum<T>(), GetValueType()))
 		throw std::invalid_argument {"Requested data type does not match channel value type!"};
-	GetDataInRange(tStart, tEnd, outTimes, [&outValues](size_t size) -> void * {
+	GetDataInRange(tStart, tEnd, &outTimes, [&outValues](size_t size) -> void * {
 		outValues.resize(size);
 		return outValues.data();
 	});

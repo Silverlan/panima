@@ -93,6 +93,7 @@ namespace panima {
 		uint32_t AddValue(float t, const T &value);
 		template<typename T>
 		uint32_t InsertValues(uint32_t n, const float *times, const T *values, float offset = 0.f, InsertFlags flags = InsertFlags::ClearExistingDataInRange);
+		void RemoveValueAtIndex(uint32_t idx);
 
 		udm::Array &GetTimesArray();
 		const udm::Array &GetTimesArray() const { return const_cast<Channel *>(this)->GetTimesArray(); }
@@ -123,7 +124,7 @@ namespace panima {
 
 		std::pair<uint32_t, uint32_t> FindInterpolationIndices(float t, float &outInterpFactor, uint32_t pivotIndex) const;
 		std::pair<uint32_t, uint32_t> FindInterpolationIndices(float t, float &outInterpFactor) const;
-		std::optional<size_t> FindValueIndex(float time, float epsilon = panima::Channel::VALUE_EPSILON) const;
+		std::optional<size_t> FindValueIndex(float time, float epsilon = panima::Channel::TIME_EPSILON) const;
 		template<typename T>
 		bool IsValueType() const;
 		template<typename T>
@@ -153,13 +154,16 @@ namespace panima {
 
 		template<typename T>
 		void GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, std::vector<T> &outValues) const;
+		void GetTimesInRange(float tStart, float tEnd, std::vector<float> &outTimes) const;
 
 		void Decimate(float tStart, float tEnd, float error = 0.03f);
 		void Decimate(float error = 0.03f);
 
 		std::optional<uint32_t> InsertSample(float t);
-		void ScaleTimeInRange(float tStart, float tEnd, double scale);
-		void ShiftTimeInRange(float tStart, float tEnd, float shiftAmount);
+		void ScaleTimeInRange(float tStart, float tEnd, float tPivot, double scale, bool retainBoundaryValues = true);
+		void ShiftTimeInRange(float tStart, float tEnd, float shiftAmount, bool retainBoundaryValues = true);
+
+		void ResolveDuplicates(float t);
 
 		void TransformGlobal(const umath::ScaledTransform &transform);
 
@@ -199,13 +203,14 @@ namespace panima {
 		}
 	  private:
 		static void MergeDataArrays(uint32_t n0, const float *times0, const uint8_t *values0, uint32_t n1, const float *times1, const uint8_t *values1, std::vector<float> &outTimes, const std::function<uint8_t *(size_t)> &fAllocateValueData, size_t valueStride);
+		std::pair<std::optional<uint32_t>, std::optional<uint32_t>> GetBoundaryIndices(float tStart, float tEnd, bool retainBoundaries = true);
 		void TimeToLocalTimeFrame(float &inOutT) const;
 		template<typename T>
 		bool DoApplyValueExpression(double time, uint32_t timeIndex, T &inOutVal) const;
 		uint32_t AddValue(float t, const void *value);
 		uint32_t InsertValues(uint32_t n, const float *times, const void *values, size_t valueStride, float offset, InsertFlags flags = InsertFlags::ClearExistingDataInRange);
 		std::pair<uint32_t, uint32_t> FindInterpolationIndices(float t, float &outInterpFactor, uint32_t pivotIndex, uint32_t recursionDepth) const;
-		void GetDataInRange(float tStart, float tEnd, std::vector<float> &outTimes, const std::function<void *(size_t)> &fAllocateValueData) const;
+		void GetDataInRange(float tStart, float tEnd, std::vector<float> *optOutTimes, const std::function<void *(size_t)> &optAllocateValueData) const;
 		udm::PProperty m_times = nullptr;
 		udm::PProperty m_values = nullptr;
 		std::unique_ptr<expression::ValueExpression> m_valueExpression; //default constructor is sufficient
