@@ -573,9 +573,11 @@ void panima::Channel::ShiftTimeInRange(float tStart, float tEnd, float shiftAmou
 	// (e.g. if we're shifting left, we have to restore the right-most value and vice versa.)
 	std::shared_ptr<void> boundaryValue = nullptr;
 	if(retainBoundaryValues) {
-		udm::visit_ng(GetValueType(), [this, &boundaryValue, shiftAmount, &idxStart, &idxEnd](auto tag) {
+		auto valIdxStart = *idxStart;
+		auto valIdxEnd = *idxEnd;
+		udm::visit_ng(GetValueType(), [this, &boundaryValue, shiftAmount, valIdxStart, valIdxEnd](auto tag) {
 			using T = typename decltype(tag)::type;
-			auto val = GetValue<T>((shiftAmount < 0.f) ? *idxEnd : *idxStart);
+			auto val = GetValue<T>((shiftAmount < 0.f) ? valIdxEnd : valIdxStart);
 			boundaryValue = std::make_shared<T>(val);
 		});
 		if(shiftAmount < 0) {
@@ -624,10 +626,12 @@ void panima::Channel::ScaleTimeInRange(float tStart, float tEnd, float tPivot, d
 	std::shared_ptr<void> boundaryValueStart = nullptr;
 	std::shared_ptr<void> boundaryValueEnd = nullptr;
 	if(retainBoundaryValues) {
-		udm::visit_ng(GetValueType(), [this, &idxStart, &idxEnd, &boundaryValueStart, &boundaryValueEnd](auto tag) {
+		auto valIdxStart = *idxStart;
+		auto valIdxEnd = *idxEnd;
+		udm::visit_ng(GetValueType(), [this, valIdxStart, valIdxEnd, &boundaryValueStart, &boundaryValueEnd](auto tag) {
 			using T = typename decltype(tag)::type;
-			boundaryValueStart = std::make_shared<T>(GetValue<T>(*idxStart));
-			boundaryValueEnd = std::make_shared<T>(GetValue<T>(*idxEnd));
+			boundaryValueStart = std::make_shared<T>(GetValue<T>(valIdxStart));
+			boundaryValueEnd = std::make_shared<T>(GetValue<T>(valIdxEnd));
 		});
 	}
 
@@ -877,7 +881,7 @@ bool panima::Channel::Validate() const
 		auto t1 = times[i];
 		if(t0 >= t1) {
 			throw std::runtime_error {"Time values are not in order!"};
-			const_cast<panima::Channel*>(this)->ResolveDuplicates(t0);
+			const_cast<panima::Channel *>(this)->ResolveDuplicates(t0);
 			return false;
 		}
 		auto diff = t1 - t0;
