@@ -187,6 +187,8 @@ namespace panima {
 		uint32_t GetSize() const;
 		void Update();
 
+		size_t Optimize();
+
 		bool operator==(const Channel &other) const { return this == &other; }
 		bool operator!=(const Channel &other) const { return !operator==(other); }
 

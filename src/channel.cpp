@@ -170,6 +170,45 @@ void panima::Channel::Update()
 	if(m_effectiveTimeFrame.duration < 0.f)
 		m_effectiveTimeFrame.duration = GetMaxTime();
 }
+size_t panima::Channel::Optimize()
+{
+	auto numTimes = GetTimeCount();
+	if(numTimes <= 2)
+		return 0;
+	size_t numRemoved = 0;
+	for(int32_t i = numTimes - 2; i >= 1; --i) {
+		auto tPrev = *GetTime(i - 1);
+		auto t = *GetTime(i);
+		auto tNext = *GetTime(i + 1);
+
+		auto shouldRemove = udm::visit_ng(GetValueType(), [this, tPrev, t, tNext, i](auto tag) -> bool {
+			using T = typename decltype(tag)::type;
+			if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
+				uint32_t pivotTimeIndex = i - 1;
+				auto valPrev = GetInterpolatedValue<T>(tPrev, pivotTimeIndex);
+
+				pivotTimeIndex = i;
+				auto val = GetInterpolatedValue<T>(t, pivotTimeIndex);
+
+				pivotTimeIndex = i + 1;
+				auto valNext = GetInterpolatedValue<T>(tNext, pivotTimeIndex);
+
+				auto f = (t - tPrev) / (tNext - tPrev);
+				auto expectedVal = GetInterpolationFunction<T>()(valPrev, valNext, f);
+				return uvec::is_equal(val, expectedVal);
+			}
+			return false;
+		});
+
+		if(shouldRemove) {
+			// This value is just linearly interpolated between its neighbors,
+			// we can remove it.
+			RemoveValueAtIndex(i);
+			++numRemoved;
+		}
+	}
+	return numRemoved;
+}
 template<typename T>
 bool panima::Channel::DoApplyValueExpression(double time, uint32_t timeIndex, T &inOutVal) const
 {
