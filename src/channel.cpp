@@ -669,7 +669,7 @@ void panima::Channel::ScaleTimeInRange(float tStart, float tEnd, float tPivot, d
 
 	if(retainBoundaryValues) {
 		// Restore boundary values
-		udm::visit_ng(GetValueType(), [this, &boundaryValueStart, boundaryValueEnd, &times, &idxStart, &idxEnd, tStart, tEnd, tPivot, scale](auto tag) {
+		udm::visit_ng(GetValueType(), [this, &boundaryValueStart, boundaryValueEnd, &times, tStart, tEnd, tPivot, scale](auto tag) {
 			using T = typename decltype(tag)::type;
 			// If the scale is smaller than 1, we'll be pulled towards the pivot, otherwise we will be
 			// pushed away from it. In some cases this will create a 'hole' near the boundary that we have to plug.
