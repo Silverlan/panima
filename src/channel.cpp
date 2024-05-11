@@ -195,7 +195,7 @@ size_t panima::Channel::Optimize()
 
 				auto f = (t - tPrev) / (tNext - tPrev);
 				auto expectedVal = GetInterpolationFunction<T>()(valPrev, valNext, f);
-				return uvec::is_equal(val, expectedVal);
+				return uvec::is_equal(val, expectedVal, 0.001f);
 			}
 			return false;
 		});
