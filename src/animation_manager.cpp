@@ -15,19 +15,20 @@ std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(const
 std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(AnimationManager &&other) { return std::shared_ptr<AnimationManager> {new AnimationManager {std::move(other)}}; }
 std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create() { return std::shared_ptr<AnimationManager> {new AnimationManager {}}; }
 panima::AnimationManager::AnimationManager(const AnimationManager &other)
-    : m_player {panima::Player::Create(*other.m_player)}, m_animationSets {other.m_animationSets}, m_currentAnimation {other.m_currentAnimation}, m_setNameToIndex {other.m_setNameToIndex}, m_currentAnimationSet {other.m_currentAnimationSet}, m_prevAnimSlice {other.m_prevAnimSlice}
+    : m_player {panima::Player::Create(*other.m_player)}, m_animationSets {other.m_animationSets}, m_currentAnimation {other.m_currentAnimation}, m_setNameToIndex {other.m_setNameToIndex}, m_currentAnimationSet {other.m_currentAnimationSet}, m_prevAnimSlice {other.m_prevAnimSlice},
+      m_priority {other.m_priority}
 /*,m_channelValueSubmitters{m_channelValueSubmitters}*/
 {
 #ifdef _MSC_VER
-	static_assert(sizeof(*this) == 384, "Update this implementation when class has changed!");
+	static_assert(sizeof(*this) == 392, "Update this implementation when class has changed!");
 #endif
 }
 panima::AnimationManager::AnimationManager(AnimationManager &&other)
     : m_player {panima::Player::Create(*other.m_player)}, m_animationSets {std::move(other.m_animationSets)}, m_currentAnimation {other.m_currentAnimation}, m_setNameToIndex {std::move(other.m_setNameToIndex)}, m_currentAnimationSet {other.m_currentAnimationSet},
-      m_prevAnimSlice {std::move(other.m_prevAnimSlice)} /*,m_channelValueSubmitters{std::move(m_channelValueSubmitters)}*/
+      m_prevAnimSlice {std::move(other.m_prevAnimSlice)}, m_priority {other.m_priority} /*,m_channelValueSubmitters{std::move(m_channelValueSubmitters)}*/
 {
 #ifdef _MSC_VER
-	static_assert(sizeof(*this) == 384, "Update this implementation when class has changed!");
+	static_assert(sizeof(*this) == 392, "Update this implementation when class has changed!");
 #endif
 }
 panima::AnimationManager::AnimationManager() : m_player {panima::Player::Create()} {}
@@ -40,9 +41,10 @@ panima::AnimationManager &panima::AnimationManager::operator=(const AnimationMan
 	m_setNameToIndex = other.m_setNameToIndex;
 
 	m_prevAnimSlice = other.m_prevAnimSlice;
+	m_priority = other.m_priority;
 	// m_channelValueSubmitters = other.m_channelValueSubmitters;
 #ifdef _MSC_VER
-	static_assert(sizeof(*this) == 384, "Update this implementation when class has changed!");
+	static_assert(sizeof(*this) == 392, "Update this implementation when class has changed!");
 #endif
 	return *this;
 }
@@ -55,10 +57,11 @@ panima::AnimationManager &panima::AnimationManager::operator=(AnimationManager &
 	m_setNameToIndex = std::move(other.m_setNameToIndex);
 
 	m_prevAnimSlice = std::move(other.m_prevAnimSlice);
+	m_priority = other.m_priority;
 	// m_channelValueSubmitters = std::move(other.m_channelValueSubmitters);
 
 #ifdef _MSC_VER
-	static_assert(sizeof(*this) == 384, "Update this implementation when class has changed!");
+	static_assert(sizeof(*this) == 392, "Update this implementation when class has changed!");
 #endif
 	return *this;
 }

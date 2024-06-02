@@ -69,6 +69,8 @@ namespace panima {
 
 		void SetCallbackInterface(const AnimationPlayerCallbackInterface &i) { m_callbackInterface = i; }
 
+		int32_t GetPriority() const { return m_priority; }
+
 		bool operator==(const AnimationManager &other) const { return this == &other; }
 		bool operator!=(const AnimationManager &other) const { return !operator==(other); }
 	  private:
@@ -84,6 +86,8 @@ namespace panima {
 		AnimationManager();
 		static void ApplySliceInterpolation(const panima::Slice &src, panima::Slice &dst, float f);
 		panima::PPlayer m_player = nullptr;
+
+		int32_t m_priority = 0;
 
 		std::vector<panima::PAnimationSet> m_animationSets;
 		util::StringMap<AnimationSetIndex> m_setNameToIndex;
