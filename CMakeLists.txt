@@ -1,7 +1,7 @@
 include(${CMAKE_SOURCE_DIR}/cmake/pr_common.cmake)
 
 set(PROJ_NAME panima)
-pr_add_library(${PROJ_NAME} SHARED)
+pr_add_library(${PROJ_NAME} STATIC)
 
 pr_add_dependency(${PROJ_NAME} util_udm TARGET PUBLIC)
 pr_add_dependency(${PROJ_NAME} cppbezierfit TARGET PUBLIC)
