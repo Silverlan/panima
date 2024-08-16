@@ -100,8 +100,12 @@ panima::ArrayFloatIterator panima::end(const udm::Array &a) { return ArrayFloatI
 
 ////////////////
 
-panima::Channel::Channel() : m_times {::udm::Property::Create(udm::Type::ArrayLz4)}, m_values {::udm::Property::Create(udm::Type::ArrayLz4)} { GetTimesArray().SetValueType(udm::Type::Float); }
-panima::Channel::Channel(const udm::PProperty &times, const udm::PProperty &values) : m_times {times}, m_values {values} {}
+panima::Channel::Channel() : m_times {::udm::Property::Create(udm::Type::ArrayLz4)}, m_values {::udm::Property::Create(udm::Type::ArrayLz4)}
+{
+	UpdateLookupCache();
+	GetTimesArray().SetValueType(udm::Type::Float);
+}
+panima::Channel::Channel(const udm::PProperty &times, const udm::PProperty &values) : m_times {times}, m_values {values} { UpdateLookupCache(); }
 panima::Channel::Channel(Channel &other) : Channel {} { operator=(other); }
 panima::Channel::~Channel() {}
 panima::Channel &panima::Channel::operator=(Channel &other)
@@ -115,6 +119,7 @@ panima::Channel &panima::Channel::operator=(Channel &other)
 		m_valueExpression = std::make_unique<expression::ValueExpression>(*other.m_valueExpression);
 	m_timeFrame = other.m_timeFrame;
 	m_effectiveTimeFrame = other.m_effectiveTimeFrame;
+	UpdateLookupCache();
 	return *this;
 }
 bool panima::Channel::Save(udm::LinkedPropertyWrapper &prop) const
@@ -144,6 +149,7 @@ bool panima::Channel::Load(udm::LinkedPropertyWrapper &prop)
 		return false;
 	m_times = itTimes->second;
 	m_values = itValues->second;
+	UpdateLookupCache();
 
 	// Note: Expression has to be loaded *after* the values, because
 	// it's dependent on the value type
@@ -155,7 +161,6 @@ bool panima::Channel::Load(udm::LinkedPropertyWrapper &prop)
 		if(SetValueExpression(expr, err) == false)
 			; // TODO: Print warning?
 	}
-
 	return true;
 }
 uint32_t panima::Channel::GetSize() const { return GetTimesArray().GetSize(); }
@@ -163,6 +168,7 @@ void panima::Channel::Resize(uint32_t numValues)
 {
 	m_times->GetValue<udm::Array>().Resize(numValues);
 	m_values->GetValue<udm::Array>().Resize(numValues);
+	UpdateLookupCache();
 }
 void panima::Channel::Update()
 {
@@ -272,6 +278,7 @@ void panima::Channel::MergeValues(const Channel &other)
 	auto &valuesOther = other.GetValueArray();
 	times.AddValueRange(startIdx, other.GetValueCount());
 	values.AddValueRange(startIdx, other.GetValueCount());
+	UpdateLookupCache();
 	memcpy(times.GetValuePtr(startIdx), const_cast<udm::Array &>(other.GetTimesArray()).GetValuePtr(0), timesOther.GetSize() * timesOther.GetValueSize());
 	if(other.GetValueType() == GetValueType()) {
 		// Same value type, just copy
@@ -295,6 +302,7 @@ void panima::Channel::ClearAnimationData()
 {
 	GetTimesArray().Resize(0);
 	GetValueArray().Resize(0);
+	UpdateLookupCache();
 }
 bool panima::Channel::ClearRange(float startTime, float endTime, bool addCaps)
 {
@@ -323,10 +331,12 @@ bool panima::Channel::ClearRange(float startTime, float endTime, bool addCaps)
 			auto &values = GetValueArray();
 			times.RemoveValueRange(startIdx, (endIdx - startIdx) + 1);
 			values.RemoveValueRange(startIdx, (endIdx - startIdx) + 1);
+			UpdateLookupCache();
 
 			if(addCaps) {
 				AddValue<T>(startTime, startVal);
 				AddValue<T>(endTime, endVal);
+				UpdateLookupCache();
 			}
 		}
 	});
@@ -535,6 +545,7 @@ void panima::Channel::RemoveValueAtIndex(uint32_t idx)
 
 	auto &values = GetValueArray();
 	values.RemoveValue(idx);
+	UpdateLookupCache();
 }
 void panima::Channel::ResolveDuplicates(float t)
 {
@@ -882,6 +893,7 @@ uint32_t panima::Channel::AddValue(float t, const void *value)
 				using T = typename decltype(tag)::type;
 				values.InsertValue(idx, *static_cast<const T *>(value));
 			});
+			UpdateLookupCache();
 			return idx;
 		}
 		// New time value exceeds last time value in time array, push back
@@ -891,6 +903,7 @@ uint32_t panima::Channel::AddValue(float t, const void *value)
 			using T = typename decltype(tag)::type;
 			values.InsertValue(idx, *static_cast<const T *>(value));
 		});
+		UpdateLookupCache();
 		return idx;
 	}
 	// Insert new value between the two indices
@@ -900,10 +913,18 @@ uint32_t panima::Channel::AddValue(float t, const void *value)
 		using T = typename decltype(tag)::type;
 		values.InsertValue(idx, *static_cast<const T *>(value));
 	});
+	UpdateLookupCache();
 	return idx;
 }
-udm::Array &panima::Channel::GetTimesArray() { return m_times->GetValue<udm::Array>(); }
-udm::Array &panima::Channel::GetValueArray() { return m_values->GetValue<udm::Array>(); }
+void panima::Channel::UpdateLookupCache()
+{
+	m_timesArray = m_times->GetValuePtr<udm::Array>();
+	m_valueArray = m_values->GetValuePtr<udm::Array>();
+	m_timesData = m_timesArray->GetValuePtr<float>(0);
+	m_valueData = m_valueArray->GetValuePtr(0);
+}
+udm::Array &panima::Channel::GetTimesArray() { return *m_timesArray; }
+udm::Array &panima::Channel::GetValueArray() { return *m_valueArray; }
 udm::Type panima::Channel::GetValueType() const { return GetValueArray().GetValueType(); }
 void panima::Channel::SetValueType(udm::Type type) { GetValueArray().SetValueType(type); }
 bool panima::Channel::Validate() const
@@ -974,7 +995,8 @@ std::pair<uint32_t, uint32_t> panima::Channel::FindInterpolationIndices(float t,
 std::pair<uint32_t, uint32_t> panima::Channel::FindInterpolationIndices(float t, float &interpFactor) const
 {
 	auto &times = GetTimesArray();
-	if(times.GetSize() == 0) {
+	auto numTimes = times.GetSize();
+	if(numTimes == 0) {
 		interpFactor = 0.f;
 		return {std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()};
 	}
@@ -983,7 +1005,7 @@ std::pair<uint32_t, uint32_t> panima::Channel::FindInterpolationIndices(float t,
 	auto it = std::upper_bound(begin(times), end(times), t);
 	if(it == end(times)) {
 		interpFactor = 0.f;
-		return {static_cast<uint32_t>(times.GetSize() - 1), static_cast<uint32_t>(times.GetSize() - 1)};
+		return {static_cast<uint32_t>(numTimes - 1), static_cast<uint32_t>(numTimes - 1)};
 	}
 	if(it == begin(times)) {
 		interpFactor = 0.f;

@@ -134,7 +134,7 @@ panima::Channel::IteratorWrapper<T> panima::Channel::It()
 template<typename T>
 T &panima::Channel::GetValue(uint32_t idx)
 {
-	return GetValueArray().GetValue<T>(idx);
+	return *(static_cast<T *>(m_valueData) + idx);
 }
 
 template<typename T>
@@ -156,10 +156,10 @@ auto panima::Channel::GetInterpolationFunction() const
 		return [](const T &v0, const T &v1, float f) -> T { return (v0 + f * (v1 - v0)); };
 }
 
-template<typename T, bool ENABLE_VALIDATION>
+template<typename T, bool VALIDATE>
 T panima::Channel::GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, T (*interpFunc)(const T &, const T &, float)) const
 {
-	if constexpr(ENABLE_VALIDATION) {
+	if constexpr(VALIDATE) {
 		auto &times = GetTimesArray();
 		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty())
 			return {};
@@ -172,12 +172,12 @@ T panima::Channel::GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, 
 	return interpFunc ? interpFunc(v0, v1, factor) : GetInterpolationFunction<T>()(v0, v1, factor);
 }
 
-template<typename T, bool ENABLE_VALIDATION>
+template<typename T, bool VALIDATE>
 T panima::Channel::GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, void (*interpFunc)(const void *, const void *, double, void *)) const
 {
 	if(!interpFunc)
-		return GetInterpolatedValue<T, ENABLE_VALIDATION>(t, inOutPivotTimeIndex);
-	if constexpr(ENABLE_VALIDATION) {
+		return GetInterpolatedValue<T, VALIDATE>(t, inOutPivotTimeIndex);
+	if constexpr(VALIDATE) {
 		auto &times = GetTimesArray();
 		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty())
 			return {};
@@ -192,10 +192,10 @@ T panima::Channel::GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, 
 	return v;
 }
 
-template<typename T, bool ENABLE_VALIDATION>
+template<typename T, bool VALIDATE>
 T panima::Channel::GetInterpolatedValue(float t, T (*interpFunc)(const T &, const T &, float)) const
 {
-	if constexpr(ENABLE_VALIDATION) {
+	if constexpr(VALIDATE) {
 		auto &times = GetTimesArray();
 		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty())
 			return {};
@@ -207,12 +207,12 @@ T panima::Channel::GetInterpolatedValue(float t, T (*interpFunc)(const T &, cons
 	return interpFunc ? interpFunc(v0, v1, factor) : GetInterpolationFunction<T>()(v0, v1, factor);
 }
 
-template<typename T, bool ENABLE_VALIDATION>
+template<typename T, bool VALIDATE>
 T panima::Channel::GetInterpolatedValue(float t, void (*interpFunc)(const void *, const void *, double, void *)) const
 {
 	if(!interpFunc)
-		return GetInterpolatedValue<T, ENABLE_VALIDATION>(t);
-	if constexpr(ENABLE_VALIDATION) {
+		return GetInterpolatedValue<T, VALIDATE>(t);
+	if constexpr(VALIDATE) {
 		auto &times = GetTimesArray();
 		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty())
 			return {};

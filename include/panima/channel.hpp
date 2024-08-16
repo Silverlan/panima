@@ -77,6 +77,7 @@ namespace panima {
 
 		static constexpr auto VALUE_EPSILON = 0.001f;
 		static constexpr float TIME_EPSILON = 0.0001f;
+		static constexpr bool ENABLE_VALIDATION = true;
 		Channel();
 		Channel(const udm::PProperty &times, const udm::PProperty &values);
 		//Channel(const Channel &other)=default;
@@ -143,13 +144,13 @@ namespace panima {
 		}
 		template<typename T>
 		auto GetInterpolationFunction() const;
-		template<typename T, bool ENABLE_VALIDATION = true>
+		template<typename T, bool VALIDATE = ENABLE_VALIDATION>
 		T GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, T (*interpFunc)(const T &, const T &, float) = nullptr) const;
-		template<typename T, bool ENABLE_VALIDATION = true>
+		template<typename T, bool VALIDATE = ENABLE_VALIDATION>
 		T GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, void (*interpFunc)(const void *, const void *, double, void *)) const;
-		template<typename T, bool ENABLE_VALIDATION = true>
+		template<typename T, bool VALIDATE = ENABLE_VALIDATION>
 		T GetInterpolatedValue(float t, T (*interpFunc)(const T &, const T &, float) = nullptr) const;
-		template<typename T, bool ENABLE_VALIDATION = true>
+		template<typename T, bool VALIDATE = ENABLE_VALIDATION>
 		T GetInterpolatedValue(float t, void (*interpFunc)(const void *, const void *, double, void *)) const;
 
 		template<typename T>
@@ -218,6 +219,13 @@ namespace panima {
 		std::unique_ptr<expression::ValueExpression> m_valueExpression; //default constructor is sufficient
 		TimeFrame m_timeFrame {};
 		TimeFrame m_effectiveTimeFrame {};
+
+		// Cached variables for faster lookup
+		void UpdateLookupCache();
+		udm::Array *m_timesArray = nullptr;
+		udm::Array *m_valueArray = nullptr;
+		float *m_timesData = nullptr;
+		void *m_valueData = nullptr;
 	};
 
 	class ArrayFloatIterator {
