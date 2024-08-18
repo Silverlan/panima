@@ -920,8 +920,8 @@ void panima::Channel::UpdateLookupCache()
 {
 	m_timesArray = m_times->GetValuePtr<udm::Array>();
 	m_valueArray = m_values->GetValuePtr<udm::Array>();
-	m_timesData = m_timesArray->GetValuePtr<float>(0);
-	m_valueData = m_valueArray->GetValuePtr(0);
+	m_timesData = !m_timesArray->IsEmpty() ? m_timesArray->GetValuePtr<float>(0) : nullptr;
+	m_valueData = !m_valueArray->IsEmpty() ? m_valueArray->GetValuePtr(0) : nullptr;
 }
 udm::Array &panima::Channel::GetTimesArray() { return *m_timesArray; }
 udm::Array &panima::Channel::GetValueArray() { return *m_valueArray; }
