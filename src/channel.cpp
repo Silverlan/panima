@@ -179,40 +179,58 @@ void panima::Channel::Update()
 size_t panima::Channel::Optimize()
 {
 	auto numTimes = GetTimeCount();
-	if(numTimes <= 2)
-		return 0;
+	constexpr auto EPSILON = 0.001f;
 	size_t numRemoved = 0;
-	for(int32_t i = numTimes - 2; i >= 1; --i) {
-		auto tPrev = *GetTime(i - 1);
-		auto t = *GetTime(i);
-		auto tNext = *GetTime(i + 1);
+	if(numTimes > 2) {
+		for(int32_t i = numTimes - 2; i >= 1; --i) {
+			auto tPrev = *GetTime(i - 1);
+			auto t = *GetTime(i);
+			auto tNext = *GetTime(i + 1);
 
-		auto shouldRemove = udm::visit_ng(GetValueType(), [this, tPrev, t, tNext, i](auto tag) -> bool {
-			using T = typename decltype(tag)::type;
-			if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
-				uint32_t pivotTimeIndex = i - 1;
-				auto valPrev = GetInterpolatedValue<T>(tPrev, pivotTimeIndex);
+			auto shouldRemove = udm::visit_ng(GetValueType(), [this, tPrev, t, tNext, i](auto tag) -> bool {
+				using T = typename decltype(tag)::type;
+				if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
+					uint32_t pivotTimeIndex = i - 1;
+					auto valPrev = GetInterpolatedValue<T>(tPrev, pivotTimeIndex);
 
-				pivotTimeIndex = i;
-				auto val = GetInterpolatedValue<T>(t, pivotTimeIndex);
+					pivotTimeIndex = i;
+					auto val = GetInterpolatedValue<T>(t, pivotTimeIndex);
 
-				pivotTimeIndex = i + 1;
-				auto valNext = GetInterpolatedValue<T>(tNext, pivotTimeIndex);
+					pivotTimeIndex = i + 1;
+					auto valNext = GetInterpolatedValue<T>(tNext, pivotTimeIndex);
 
-				auto f = (t - tPrev) / (tNext - tPrev);
-				auto expectedVal = GetInterpolationFunction<T>()(valPrev, valNext, f);
-				return uvec::is_equal(val, expectedVal, 0.001f);
+					auto f = (t - tPrev) / (tNext - tPrev);
+					auto expectedVal = GetInterpolationFunction<T>()(valPrev, valNext, f);
+					return uvec::is_equal(val, expectedVal, EPSILON);
+				}
+				return false;
+			});
+
+			if(shouldRemove) {
+				// This value is just linearly interpolated between its neighbors,
+				// we can remove it.
+				RemoveValueAtIndex(i);
+				++numRemoved;
 			}
-			return false;
-		});
-
-		if(shouldRemove) {
-			// This value is just linearly interpolated between its neighbors,
-			// we can remove it.
-			RemoveValueAtIndex(i);
-			++numRemoved;
 		}
 	}
+
+	numTimes = GetTimeCount();
+	if(numTimes == 2) {
+		// If only two values are remaining, we may be able to collapse into a single value (if they are the same)
+		udm::visit_ng(GetValueType(), [this, &numRemoved](auto tag) {
+			using T = typename decltype(tag)::type;
+			if constexpr(is_animatable_type(udm::type_to_enum<T>())) {
+				auto &val0 = GetValue<T>(0);
+				auto &val1 = GetValue<T>(1);
+				if(!uvec::is_equal(val0, val1, EPSILON))
+					return;
+				RemoveValueAtIndex(1);
+				++numRemoved;
+			}
+		});
+	}
+
 	return numRemoved;
 }
 template<typename T>
