@@ -940,6 +940,11 @@ void panima::Channel::UpdateLookupCache()
 	m_valueArray = m_values->GetValuePtr<udm::Array>();
 	m_timesData = !m_timesArray->IsEmpty() ? m_timesArray->GetValuePtr<float>(0) : nullptr;
 	m_valueData = !m_valueArray->IsEmpty() ? m_valueArray->GetValuePtr(0) : nullptr;
+
+	if(m_timesArray->GetArrayType() == udm::ArrayType::Compressed)
+		static_cast<udm::ArrayLz4 *>(m_timesArray)->SetUncompressedMemoryPersistent(true);
+	if(m_valueArray->GetArrayType() == udm::ArrayType::Compressed)
+		static_cast<udm::ArrayLz4 *>(m_valueArray)->SetUncompressedMemoryPersistent(true);
 }
 udm::Array &panima::Channel::GetTimesArray() { return *m_timesArray; }
 udm::Array &panima::Channel::GetValueArray() { return *m_valueArray; }
