@@ -11,7 +11,9 @@
 #include <udm.hpp>
 #include <sharedutils/util_uri.hpp>
 #include <sharedutils/util_string.h>
-#include <bezier_fit.hpp>
+
+import bezierfit;
+
 panima::ChannelPath::ChannelPath(const std::string &ppath)
 {
 	uriparser::Uri uri {ppath};
