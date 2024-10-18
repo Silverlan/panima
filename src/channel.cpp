@@ -16,7 +16,8 @@ import bezierfit;
 
 panima::ChannelPath::ChannelPath(const std::string &ppath)
 {
-	uriparser::Uri uri {ppath};
+	auto escapedPath = uriparser::escape(ppath);
+	uriparser::Uri uri {escapedPath};
 	auto scheme = uri.scheme();
 	if(!scheme.empty() && scheme != "panima")
 		return; // Invalid panima URI
@@ -24,7 +25,7 @@ panima::ChannelPath::ChannelPath(const std::string &ppath)
 	if(!strPath.empty() && strPath.front() == '/')
 		strPath.erase(strPath.begin());
 	ustring::replace(strPath, "%20", " ");
-	path = std::move(strPath);
+	path = std::move(uriparser::unescape(strPath));
 	auto strQueries = uri.query();
 	std::vector<std::string> queries;
 	ustring::explode(strQueries, "&", queries);
@@ -36,6 +37,8 @@ panima::ChannelPath::ChannelPath(const std::string &ppath)
 		if(query.front() == "components") {
 			m_components = std::make_unique<std::vector<std::string>>();
 			ustring::explode(query[1], ",", *m_components);
+			for(auto &str : *m_components)
+				str = uriparser::unescape(str);
 		}
 	}
 }
