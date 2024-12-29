@@ -16,7 +16,15 @@ import bezierfit;
 
 panima::ChannelPath::ChannelPath(const std::string &ppath)
 {
-	auto escapedPath = uriparser::escape(ppath);
+	auto pathWithoutScheme = ppath;
+	auto colon = pathWithoutScheme.find(':');
+	if(colon != std::string::npos) {
+		auto scheme = pathWithoutScheme.substr(0, colon);
+		if(scheme != "panima")
+			return; // Invalid panima URI
+		pathWithoutScheme = pathWithoutScheme.substr(colon + 1);
+	}
+	auto escapedPath = uriparser::escape(pathWithoutScheme);
 	uriparser::Uri uri {escapedPath};
 	auto scheme = uri.scheme();
 	if(!scheme.empty() && scheme != "panima")
