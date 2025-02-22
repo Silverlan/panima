@@ -1,21 +1,21 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Copyright (c) 2021 Silverlan
- */
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __PANIMA_ANIMATION_MANAGER_HPP__
-#define __PANIMA_ANIMATION_MANAGER_HPP__
+module;
 
-#include "panima/types.hpp"
-#include "panima/slice.hpp"
 #include <sharedutils/util_string_hash.hpp>
 #include <udm.hpp>
 #include <vector>
 #include <memory>
 
-namespace panima {
+export module panima:animation_manager;
+
+import :animation_set;
+import :slice;
+import :player;
+
+export namespace panima {
 	struct AnimationPlayerCallbackInterface {
 		std::function<bool(const panima::AnimationSet &, panima::AnimationId, PlaybackFlags)> onPlayAnimation = nullptr;
 		std::function<void()> onStopAnimation = nullptr;
@@ -103,8 +103,10 @@ namespace panima {
 	};
 	using PAnimationManager = std::shared_ptr<AnimationManager>;
 };
-REGISTER_BASIC_BITWISE_OPERATORS(panima::PlaybackFlags)
 
-std::ostream &operator<<(std::ostream &out, const panima::AnimationManager &o);
+export
+{
+	REGISTER_BASIC_BITWISE_OPERATORS(panima::PlaybackFlags)
 
-#endif
+	std::ostream &operator<<(std::ostream &out, const panima::AnimationManager &o);
+};

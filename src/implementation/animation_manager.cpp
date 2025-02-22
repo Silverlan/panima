@@ -5,11 +5,17 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#include "panima/animation_manager.hpp"
-#include "panima/animation_set.hpp"
-#include "panima/animation.hpp"
-#include "panima/player.hpp"
-//#include <type_traits>
+module;
+
+#include <memory>
+#include <string_view>
+
+module panima;
+
+import :animation_manager;
+import :animation_set;
+import :animation;
+import :player;
 
 std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(const AnimationManager &other) { return std::shared_ptr<AnimationManager> {new AnimationManager {other}}; }
 std::shared_ptr<panima::AnimationManager> panima::AnimationManager::Create(AnimationManager &&other) { return std::shared_ptr<AnimationManager> {new AnimationManager {std::move(other)}}; }

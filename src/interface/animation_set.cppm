@@ -5,10 +5,8 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#ifndef __PANIMA_ANIMATION_SET_HPP__
-#define __PANIMA_ANIMATION_SET_HPP__
+module;
 
-#include "panima/types.hpp"
 #include <memory>
 #include <vector>
 #include <string>
@@ -17,7 +15,12 @@
 #include <unordered_map>
 #include <sharedutils/util_string_hash.hpp>
 
-namespace panima {
+export module panima:animation_set;
+
+import :animation;
+import :types;
+
+export namespace panima {
 	class AnimationSet : public std::enable_shared_from_this<AnimationSet> {
 	  public:
 		static std::shared_ptr<AnimationSet> Create();
@@ -46,8 +49,7 @@ namespace panima {
 		std::vector<std::shared_ptr<Animation>> m_animations;
 		std::unordered_map<size_t, size_t> m_nameToId;
 	};
+	using PAnimationSet = std::shared_ptr<AnimationSet>;
 };
 
-std::ostream &operator<<(std::ostream &out, const panima::AnimationSet &o);
-
-#endif
+export { std::ostream &operator<<(std::ostream &out, const panima::AnimationSet &o); };

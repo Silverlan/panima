@@ -5,4 +5,10 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#include "panima/slice.hpp"
+module;
+
+#include <exprtk.hpp>
+
+module panima;
+
+import :slice;

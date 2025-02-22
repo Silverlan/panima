@@ -5,25 +5,20 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#ifndef __PANIMA_ANIMATION_HPP__
-#define __PANIMA_ANIMATION_HPP__
+module;
 
 #include <cinttypes>
 #include <memory>
 #include <vector>
 #include <string>
 #include <mathutil/umath.h>
+#include <udm.hpp>
 
-namespace udm {
-	struct AssetData;
-	enum class Type : uint8_t;
-	struct LinkedPropertyWrapper;
-};
-namespace util {
-	class Path;
-};
-namespace panima {
-	struct Channel;
+export module panima:animation;
+
+import :channel;
+
+export namespace panima {
 	class Animation : public std::enable_shared_from_this<Animation> {
 	  public:
 		enum class Flags : uint32_t { None = 0u, LoopBit = 1u };
@@ -67,8 +62,9 @@ namespace panima {
 	};
 };
 
-REGISTER_BASIC_BITWISE_OPERATORS(panima::Animation::Flags)
+export
+{
+	REGISTER_BASIC_BITWISE_OPERATORS(panima::Animation::Flags)
 
-std::ostream &operator<<(std::ostream &out, const panima::Animation &o);
-
-#endif
+	std::ostream &operator<<(std::ostream &out, const panima::Animation &o);
+};

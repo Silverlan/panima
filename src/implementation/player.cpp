@@ -5,10 +5,15 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#include "panima/player.hpp"
-#include "panima/animation.hpp"
-#include "panima/channel.hpp"
+module;
+
 #include <udm.hpp>
+
+module panima;
+
+import :player;
+import :animation;
+import :channel;
 
 std::shared_ptr<panima::Player> panima::Player::Create() { return std::shared_ptr<Player> {new Player {}}; }
 std::shared_ptr<panima::Player> panima::Player::Create(const Player &other) { return std::shared_ptr<Player> {new Player {other}}; }

@@ -7,8 +7,7 @@ pr_add_dependency(${PROJ_NAME} util_udm TARGET PUBLIC)
 pr_add_dependency(${PROJ_NAME} cppbezierfit TARGET PUBLIC)
 pr_add_external_dependency(${PROJ_NAME} exprtk HEADER_ONLY)
 
-pr_add_headers(${PROJ_NAME} "include/")
-pr_add_sources(${PROJ_NAME} "src/")
+pr_init_module(${PROJ_NAME})
 
 # Required for exprtk
 include(CheckCXXCompilerFlag)

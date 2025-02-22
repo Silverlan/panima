@@ -5,14 +5,19 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#include "panima/channel.hpp"
-#include "panima/channel_t.hpp"
-#include "value_expression.hpp"
+module;
+
 #include <udm.hpp>
 #include <sharedutils/util_uri.hpp>
 #include <sharedutils/util_string.h>
+#include <exprtk.hpp>
+
+module panima;
 
 import bezierfit;
+
+import :channel;
+import :expression;
 
 panima::ChannelPath::ChannelPath(const std::string &ppath)
 {

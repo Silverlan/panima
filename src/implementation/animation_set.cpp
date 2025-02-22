@@ -5,8 +5,14 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#include "panima/animation_set.hpp"
-#include "panima/animation.hpp"
+module;
+
+#include <string>
+
+module panima;
+
+import :animation_set;
+import :animation;
 
 static size_t get_anim_hash(const std::string &name) { return std::hash<std::string> {}(name); }
 static size_t get_anim_hash(const std::string_view &name) { return std::hash<std::string_view> {}(name); }

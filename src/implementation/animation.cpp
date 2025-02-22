@@ -5,10 +5,15 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#include "panima/animation.hpp"
-#include "panima/channel.hpp"
+module;
+
 #include <udm.hpp>
 #include <mathutil/umath.h>
+
+module panima;
+
+import :animation;
+import :channel;
 
 panima::Channel *panima::Animation::AddChannel(std::string path, udm::Type valueType)
 {

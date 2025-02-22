@@ -5,14 +5,15 @@
  * Copyright (c) 2021 Silverlan
  */
 
-#ifndef __PANIMA_SLICE_HPP__
-#define __PANIMA_SLICE_HPP__
+module;
 
 #include <vector>
 #include <iostream>
 #include <udm_types.hpp>
 
-namespace panima {
+export module panima:slice;
+
+export namespace panima {
 	struct Slice {
 		Slice() = default;
 		Slice(const Slice &) = default;
@@ -22,5 +23,3 @@ namespace panima {
 		std::vector<udm::PProperty> channelValues;
 	};
 };
-
-#endif

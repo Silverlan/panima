@@ -4,11 +4,8 @@
  *
  * Copyright (c) 2021 Silverlan */
 
-#ifndef __PANIMA_PLAYER_HPP__
-#define __PANIMA_PLAYER_HPP__
+module;
 
-#include "slice.hpp"
-#include "types.hpp"
 #include <mathutil/umath.h>
 #include <udm_types.hpp>
 #include <vector>
@@ -17,9 +14,13 @@
 #undef GetCurrentTime
 // #define PRAGMA_ENABLE_ANIMATION_SYSTEM_2
 
-class Model;
-namespace panima {
-	class Animation;
+export module panima:player;
+
+import :slice;
+import :types;
+import :animation;
+
+export namespace panima {
 	class Player : public std::enable_shared_from_this<Player> {
 	  public:
 		enum class StateFlags : uint32_t { None = 0u, Looping = 1u, AnimationDirty = Looping << 1u };
@@ -70,9 +71,11 @@ namespace panima {
 	};
 	using PPlayer = std::shared_ptr<Player>;
 };
-REGISTER_BASIC_BITWISE_OPERATORS(panima::Player::StateFlags)
 
-std::ostream &operator<<(std::ostream &out, const panima::Player &o);
-std::ostream &operator<<(std::ostream &out, const panima::Slice &o);
+export
+{
+	REGISTER_BASIC_BITWISE_OPERATORS(panima::Player::StateFlags)
 
-#endif
+	std::ostream &operator<<(std::ostream &out, const panima::Player &o);
+	std::ostream &operator<<(std::ostream &out, const panima::Slice &o);
+};
