@@ -8,6 +8,8 @@
 module;
 
 #include <string>
+#include <memory>
+#include <optional>
 
 module panima;
 

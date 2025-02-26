@@ -9,6 +9,7 @@ module;
 
 #include <memory>
 #include <string_view>
+#include <optional>
 
 module panima;
 

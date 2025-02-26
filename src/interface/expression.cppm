@@ -17,11 +17,6 @@ export module panima:expression;
 import :channel;
 
 export namespace panima {
-	template<typename T>
-	concept is_supported_expression_type_v = (udm::is_numeric_type(udm::type_to_enum<T>()) && !std::is_same_v<T, udm::Half>) || udm::is_vector_type<T> || udm::is_matrix_type<T> || std::is_same_v<T, Quat> || std::is_same_v<T, EulerAngles>;
-};
-
-export namespace panima {
 	struct TimeFrame;
 	namespace expression {
 		struct ValueExpression;
@@ -216,79 +211,79 @@ export namespace panima {
 	};
 };
 
-export
+template<typename T>
+void panima::expression::ValueExpression::DoApply(double time, uint32_t timeIndex, const TimeFrame &timeFrame, T &inOutValue)
 {
-	template<typename T>
-	void panima::expression::ValueExpression::DoApply(double time, uint32_t timeIndex, const TimeFrame &timeFrame, T &inOutValue)
-	{
-		expr.time = time;
-		expr.timeIndex = static_cast<double>(timeIndex);
+	expr.time = time;
+	expr.timeIndex = static_cast<double>(timeIndex);
 
-		expr.startOffset = timeFrame.startOffset;
-		expr.timeScale = timeFrame.scale;
-		expr.duration = timeFrame.duration;
+	expr.startOffset = timeFrame.startOffset;
+	expr.timeScale = timeFrame.scale;
+	expr.duration = timeFrame.duration;
 
-		constexpr auto n = udm::get_numeric_component_count(udm::type_to_enum<T>());
-		using type_t = exprtk::results_context<ExprScalar>::type_store_t;
-		if constexpr(std::is_same_v<udm::underlying_numeric_type<T>, ExprScalar>) {
-			static_assert(sizeof(TExprType<T>) == sizeof(T));
-			std::get<TExprType<T>>(expr.value) = reinterpret_cast<TExprType<T> &>(inOutValue);
-			if constexpr(n == 1)
-				inOutValue = expr.expression.value();
-			else {
-				// Vector type
-				auto floatVal = expr.expression.value();
-				auto &results = expr.expression.results();
-				if(results.count() == 1 && results[0].type == type_t::e_vector) {
-					typename type_t::vector_view vv {results[0]};
-					if(vv.size() == n)
-						inOutValue = *reinterpret_cast<T *>(&vv[0]);
-				}
-				else {
-					// Expression returned a single float value?
-					// We'll assume it's intended to be interpreted as a vector
-					if constexpr(udm::is_vector_type<T>)
-						inOutValue = T {static_cast<typename T::value_type>(floatVal)};
-				}
-			}
-		}
+	constexpr auto n = udm::get_numeric_component_count(udm::type_to_enum<T>());
+	using type_t = exprtk::results_context<ExprScalar>::type_store_t;
+	if constexpr(std::is_same_v<udm::underlying_numeric_type<T>, ExprScalar>) {
+		static_assert(sizeof(TExprType<T>) == sizeof(T));
+		std::get<TExprType<T>>(expr.value) = reinterpret_cast<TExprType<T> &>(inOutValue);
+		if constexpr(n == 1)
+			inOutValue = expr.expression.value();
 		else {
-			// Base type mismatch, we'll have to copy
-			auto &exprValue = std::get<TExprType<T>>(expr.value);
-			static_assert(std::tuple_size_v<std::remove_reference_t<decltype(exprValue)>> == n);
-			auto *ptrStart = reinterpret_cast<udm::underlying_numeric_type<T> *>(&inOutValue);
-			auto *ptr = ptrStart;
-			for(auto i = decltype(n) {0u}; i < n; ++i) {
-				exprValue[i] = *ptr;
-				++ptr;
+			// Vector type
+			auto floatVal = expr.expression.value();
+			auto &results = expr.expression.results();
+			if(results.count() == 1 && results[0].type == type_t::e_vector) {
+				typename type_t::vector_view vv {results[0]};
+				if(vv.size() == n)
+					inOutValue = *reinterpret_cast<T *>(&vv[0]);
 			}
-
-			if constexpr(n == 1)
-				inOutValue = expr.expression.value();
 			else {
-				// Vector type
-				auto floatVal = expr.expression.value();
-				auto &results = expr.expression.results();
-				if(results.count() == 1 && results[0].type == type_t::e_vector) {
-					typename type_t::vector_view vv {results[0]};
-					if(vv.size() == n) {
-						ptr = ptrStart;
-						for(auto i = decltype(n) {0u}; i < n; ++i) {
-							*ptr = vv[i];
-							++ptr;
-						}
-					}
-				}
-				else {
-					// Expression returned a single float value?
-					// We'll assume it's intended to be interpreted as a vector
-					if constexpr(udm::is_vector_type<T>)
-						inOutValue = T {static_cast<typename T::value_type>(floatVal)};
-				}
+				// Expression returned a single float value?
+				// We'll assume it's intended to be interpreted as a vector
+				if constexpr(udm::is_vector_type<T>)
+					inOutValue = T {static_cast<typename T::value_type>(floatVal)};
 			}
 		}
 	}
+	else {
+		// Base type mismatch, we'll have to copy
+		auto &exprValue = std::get<TExprType<T>>(expr.value);
+		static_assert(std::tuple_size_v<std::remove_reference_t<decltype(exprValue)>> == n);
+		auto *ptrStart = reinterpret_cast<udm::underlying_numeric_type<T> *>(&inOutValue);
+		auto *ptr = ptrStart;
+		for(auto i = decltype(n) {0u}; i < n; ++i) {
+			exprValue[i] = *ptr;
+			++ptr;
+		}
 
+		if constexpr(n == 1)
+			inOutValue = expr.expression.value();
+		else {
+			// Vector type
+			auto floatVal = expr.expression.value();
+			auto &results = expr.expression.results();
+			if(results.count() == 1 && results[0].type == type_t::e_vector) {
+				typename type_t::vector_view vv {results[0]};
+				if(vv.size() == n) {
+					ptr = ptrStart;
+					for(auto i = decltype(n) {0u}; i < n; ++i) {
+						*ptr = vv[i];
+						++ptr;
+					}
+				}
+			}
+			else {
+				// Expression returned a single float value?
+				// We'll assume it's intended to be interpreted as a vector
+				if constexpr(udm::is_vector_type<T>)
+					inOutValue = T {static_cast<typename T::value_type>(floatVal)};
+			}
+		}
+	}
+}
+
+export
+{
 	//Fixed bug: value_expression.cpp defines all of these for common use, but no one used them, making instead their own versions.
 	extern template void panima::expression::ValueExpression::DoApply(double, uint32_t, const TimeFrame &, udm::Int8 &);
 	extern template void panima::expression::ValueExpression::DoApply(double, uint32_t, const TimeFrame &, udm::UInt8 &);
