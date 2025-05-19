@@ -167,6 +167,8 @@ export namespace panima {
 							std::cout << str << std::endl;
 							break;
 						}
+					default:
+						break;
 					}
 				}
 				std::cout << std::endl;

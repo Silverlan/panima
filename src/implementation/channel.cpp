@@ -107,7 +107,7 @@ panima::ArrayFloatIterator panima::ArrayFloatIterator::operator+(uint32_t n)
 int32_t panima::ArrayFloatIterator::operator-(const ArrayFloatIterator &other) const { return m_data - other.m_data; }
 panima::ArrayFloatIterator panima::ArrayFloatIterator::operator-(int32_t idx) const { return ArrayFloatIterator {m_data - idx}; }
 panima::ArrayFloatIterator::reference panima::ArrayFloatIterator::operator*() { return *m_data; }
-const panima::ArrayFloatIterator::reference panima::ArrayFloatIterator::operator*() const { return const_cast<ArrayFloatIterator *>(this)->operator*(); }
+panima::ArrayFloatIterator::const_reference panima::ArrayFloatIterator::operator*() const { return const_cast<ArrayFloatIterator *>(this)->operator*(); }
 panima::ArrayFloatIterator::pointer panima::ArrayFloatIterator::operator->() { return m_data; }
 const panima::ArrayFloatIterator::pointer panima::ArrayFloatIterator::operator->() const { return const_cast<ArrayFloatIterator *>(this)->operator->(); }
 bool panima::ArrayFloatIterator::operator==(const ArrayFloatIterator &other) const { return m_data == other.m_data; }
@@ -471,9 +471,23 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 				auto time1 = *GetTime(indices.second);
 				auto &value0 = GetValue<T>(indices.first);
 				auto &value1 = GetValue<T>(indices.second);
-				T result;
-				udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
-				return std::pair<float, T> {umath::lerp(time0, time1, f), result};
+				// We have to explicitely construct Vector2 and Vector4 here due to
+				// an unresolved symbol compiler bug with clang
+				if constexpr(std::is_same_v<T, Vector2>) {
+					Vector2 result {0.f, 0.f};
+					udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
+					return std::pair<float, T> {umath::lerp(time0, time1, f), result};
+				}
+				else if constexpr(std::is_same_v<T, Vector4>) {
+					Vector4 result {0.f, 0.f, 0.f, 0.f};
+					udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
+					return std::pair<float, T> {umath::lerp(time0, time1, f), result};
+				}
+				else {
+					T result;
+					udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
+					return std::pair<float, T> {umath::lerp(time0, time1, f), result};
+				}
 			}
 			return {};
 		};
@@ -572,6 +586,8 @@ void panima::Channel::TransformGlobal(const umath::ScaledTransform &transform)
 			}
 			break;
 		}
+	default:
+		break;
 	}
 }
 void panima::Channel::RemoveValueAtIndex(uint32_t idx)

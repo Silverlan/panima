@@ -6,6 +6,7 @@ module;
 
 #include <sharedutils/util_path.hpp>
 #include <mathutil/umath.h>
+#include <mathutil/uvec.h>
 #include <mathutil/transform.hpp>
 #include <udm.hpp>
 #include <udm_basic_types.hpp>
@@ -244,6 +245,7 @@ export namespace panima {
 		using difference_type = std::ptrdiff_t;
 		using pointer = float *;
 		using reference = float &;
+		using const_reference = const value_type&;
 
 		ArrayFloatIterator(float *data);
 		ArrayFloatIterator &operator++();
@@ -252,7 +254,7 @@ export namespace panima {
 		int32_t operator-(const ArrayFloatIterator &other) const;
 		ArrayFloatIterator operator-(int32_t idx) const;
 		reference operator*();
-		const reference operator*() const;
+		const_reference operator*() const;
 		pointer operator->();
 		const pointer operator->() const;
 		bool operator==(const ArrayFloatIterator &other) const;
@@ -437,8 +439,17 @@ T panima::Channel::GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, 
 {
 	if constexpr(VALIDATE) {
 		auto &times = GetTimesArray();
-		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty())
+		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty()) {
+			// We have to explicitely construct Vector2 and Vector4 here due to
+			// an unresolved symbol compiler bug with clang
+			if constexpr(std::is_same_v<T, Vector2>)
+				return Vector2 {0.f, 0.f};
+			else if constexpr(std::is_same_v<T, Vector4>)
+				return Vector4 {0.f, 0.f, 0.f, 0.f};
+			//
+			
 			return {};
+		}
 	}
 	float factor;
 	auto indices = FindInterpolationIndices(t, factor, inOutPivotTimeIndex);
@@ -473,8 +484,17 @@ T panima::Channel::GetInterpolatedValue(float t, T (*interpFunc)(const T &, cons
 {
 	if constexpr(VALIDATE) {
 		auto &times = GetTimesArray();
-		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty())
+		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty()) {
+			// We have to explicitely construct Vector2 and Vector4 here due to
+			// an unresolved symbol compiler bug with clang
+			if constexpr(std::is_same_v<T, Vector2>)
+				return Vector2 {0.f, 0.f};
+			else if constexpr(std::is_same_v<T, Vector4>)
+				return Vector4 {0.f, 0.f, 0.f, 0.f};
+			//
+
 			return {};
+		}
 	}
 	float factor;
 	auto indices = FindInterpolationIndices(t, factor);
