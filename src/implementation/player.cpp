@@ -130,14 +130,13 @@ bool panima::Player::Advance(float dt, bool forceUpdate)
 
 void panima::Player::SetAnimation(const Animation &animation)
 {
+	Reset();
 	m_animation = animation.shared_from_this();
 	auto &channels = animation.GetChannels();
 	m_currentSlice.channelValues.reserve(channels.size());
 	for(auto &channel : channels)
 		m_currentSlice.channelValues.push_back(udm::Property::Create(channel->GetValueType()));
-	m_lastChannelTimestampIndices.clear();
 	m_lastChannelTimestampIndices.resize(channels.size(), std::numeric_limits<uint32_t>::max());
-	Reset();
 }
 
 void panima::Player::Reset()
