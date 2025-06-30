@@ -5,7 +5,7 @@ pr_add_library(${PROJ_NAME} STATIC)
 
 pr_add_dependency(${PROJ_NAME} util_udm TARGET PUBLIC)
 pr_add_dependency(${PROJ_NAME} cppbezierfit TARGET PUBLIC)
-pr_add_external_dependency(${PROJ_NAME} exprtk HEADER_ONLY)
+pr_add_third_party_dependency(${PROJ_NAME} exprtk HEADER_ONLY)
 
 pr_init_module(${PROJ_NAME})
 
