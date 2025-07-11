@@ -35,4 +35,17 @@ export namespace panima {
 	using AnimationChannelId = uint16_t;
 
 	constexpr bool is_animatable_type(udm::Type type) { return !udm::is_non_trivial_type(type) && type != udm::Type::HdrColor && type != udm::Type::Srgba && type != udm::Type::Transform && type != udm::Type::ScaledTransform && type != udm::Type::Nil && type != udm::Type::Half; }
+
+	template<typename T>
+	T make_value()
+	{
+		// We can't use the default empty constructor for Vector2 and Vector4 due to
+		// a clang compiler bug (?), so we'll construct them explicitely.
+		if constexpr(std::is_same_v<T,Vector2>)
+			return Vector2 {0.f, 0.f};
+		else if constexpr(std::is_same_v<T,Vector4>)
+			return Vector4 {0.f, 0.f, 0.f, 0.f};
+		else
+			return T{};
+	}
 };

@@ -467,23 +467,9 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 				auto time1 = *GetTime(indices.second);
 				auto &value0 = GetValue<T>(indices.first);
 				auto &value1 = GetValue<T>(indices.second);
-				// We have to explicitely construct Vector2 and Vector4 here due to
-				// an unresolved symbol compiler bug with clang
-				if constexpr(std::is_same_v<T, Vector2>) {
-					Vector2 result {0.f, 0.f};
-					udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
-					return std::pair<float, T> {umath::lerp(time0, time1, f), result};
-				}
-				else if constexpr(std::is_same_v<T, Vector4>) {
-					Vector4 result {0.f, 0.f, 0.f, 0.f};
-					udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
-					return std::pair<float, T> {umath::lerp(time0, time1, f), result};
-				}
-				else {
-					T result;
-					udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
-					return std::pair<float, T> {umath::lerp(time0, time1, f), result};
-				}
+				auto result = make_value<T>();
+				udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
+				return std::pair<float, T> {umath::lerp(time0, time1, f), result};
 			}
 			return {};
 		};
@@ -857,7 +843,7 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 			MergeDataArrays(
 			  newTimes.size(), newTimes.data(), reinterpret_cast<uint8_t *>(newValues.data()), n, times, static_cast<const uint8_t *>(values), mergedTimes,
 			  [&mergedValues](size_t size) -> uint8_t * {
-				  mergedValues.resize(size);
+				  mergedValues.resize(size, make_value<TValue>());
 				  return reinterpret_cast<uint8_t *>(mergedValues.data());
 			  },
 			  sizeof(TValue));

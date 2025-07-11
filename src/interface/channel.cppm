@@ -208,7 +208,7 @@ export namespace panima {
 			MergeDataArrays(
 			  times0.size(), times0.data(), reinterpret_cast<const uint8_t *>(values0.data()), times1.size(), times1.data(), reinterpret_cast<const uint8_t *>(values1.data()), outTimes,
 			  [&outValues](size_t size) -> uint8_t * {
-				  outValues.resize(size);
+				  outValues.resize(size, make_value<T>());
 				  return reinterpret_cast<uint8_t *>(outValues.data());
 			  },
 			  sizeof(T));
@@ -328,7 +328,7 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 	if(!is_binary_compatible_type(udm::type_to_enum<T>(), GetValueType()))
 		throw std::invalid_argument {"Requested data type does not match channel value type!"};
 	GetDataInRange(tStart, tEnd, &outTimes, [&outValues](size_t size) -> void * {
-		outValues.resize(size);
+		outValues.resize(size, make_value<T>());
 		return outValues.data();
 	});
 }
@@ -438,17 +438,8 @@ T panima::Channel::GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, 
 {
 	if constexpr(VALIDATE) {
 		auto &times = GetTimesArray();
-		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty()) {
-			// We have to explicitely construct Vector2 and Vector4 here due to
-			// an unresolved symbol compiler bug with clang
-			if constexpr(std::is_same_v<T, Vector2>)
-				return Vector2 {0.f, 0.f};
-			else if constexpr(std::is_same_v<T, Vector4>)
-				return Vector4 {0.f, 0.f, 0.f, 0.f};
-			//
-			
-			return {};
-		}
+		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty())
+			return make_value<T>();
 	}
 	float factor;
 	auto indices = FindInterpolationIndices(t, factor, inOutPivotTimeIndex);
@@ -473,7 +464,7 @@ T panima::Channel::GetInterpolatedValue(float t, uint32_t &inOutPivotTimeIndex, 
 	inOutPivotTimeIndex = indices.first;
 	auto &v0 = GetValue<T>(indices.first);
 	auto &v1 = GetValue<T>(indices.second);
-	T v;
+	auto v = make_value<T>();
 	interpFunc(&v0, &v1, factor, &v);
 	return v;
 }
@@ -483,17 +474,8 @@ T panima::Channel::GetInterpolatedValue(float t, T (*interpFunc)(const T &, cons
 {
 	if constexpr(VALIDATE) {
 		auto &times = GetTimesArray();
-		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty()) {
-			// We have to explicitely construct Vector2 and Vector4 here due to
-			// an unresolved symbol compiler bug with clang
-			if constexpr(std::is_same_v<T, Vector2>)
-				return Vector2 {0.f, 0.f};
-			else if constexpr(std::is_same_v<T, Vector4>)
-				return Vector4 {0.f, 0.f, 0.f, 0.f};
-			//
-
-			return {};
-		}
+		if(udm::type_to_enum<T>() != GetValueType() || times.IsEmpty())
+			return make_value<T>();
 	}
 	float factor;
 	auto indices = FindInterpolationIndices(t, factor);
@@ -516,7 +498,7 @@ T panima::Channel::GetInterpolatedValue(float t, void (*interpFunc)(const void *
 	auto indices = FindInterpolationIndices(t, factor);
 	auto &v0 = GetValue<T>(indices.first);
 	auto &v1 = GetValue<T>(indices.second);
-	T v;
+	auto v = make_value<T>();
 	interpFunc(&v0, &v1, factor, &v);
 	return v;
 }
