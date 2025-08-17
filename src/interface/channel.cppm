@@ -19,7 +19,7 @@ import :types;
 export namespace panima {
 	template<typename T>
 	concept is_supported_expression_type_v = (udm::is_numeric_type(udm::type_to_enum<T>()) && !std::is_same_v<T, udm::Half>) || udm::is_vector_type<T> || udm::is_matrix_type<T> || std::is_same_v<T, Quat> || std::is_same_v<T, EulerAngles>;
-	
+
 	constexpr std::string_view ANIMATION_CHANNEL_PATH_POSITION = "position";
 	constexpr std::string_view ANIMATION_CHANNEL_PATH_ROTATION = "rotation";
 	constexpr std::string_view ANIMATION_CHANNEL_PATH_SCALE = "scale";
@@ -244,7 +244,7 @@ export namespace panima {
 		using difference_type = std::ptrdiff_t;
 		using pointer = float *;
 		using reference = float &;
-		using const_reference = const value_type&;
+		using const_reference = const value_type &;
 
 		ArrayFloatIterator(float *data);
 		ArrayFloatIterator &operator++();
