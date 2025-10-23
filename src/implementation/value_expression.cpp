@@ -3,9 +3,10 @@
 
 module;
 
-#include <mathutil/color.h>
+#include "sharedutils/magic_enum.hpp"
+#include "mathutil/glmutil.h"
 #include <exprtk.hpp>
-#include <udm.hpp>
+#include <variant>
 
 module panima;
 

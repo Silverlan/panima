@@ -3,9 +3,8 @@
 
 module;
 
+#include "mathutil/glmutil.h"
 #include <exprtk.hpp>
-#include <mathutil/uquat.h>
-#include <mathutil/uvec.h>
 
 module panima;
 

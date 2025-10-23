@@ -9,7 +9,6 @@ module;
 #include <optional>
 #include <string_view>
 #include <unordered_map>
-#include <sharedutils/util_string_hash.hpp>
 
 export module panima:animation_set;
 

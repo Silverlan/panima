@@ -7,8 +7,6 @@ module;
 #include <memory>
 #include <vector>
 #include <string>
-#include <mathutil/umath.h>
-#include <udm.hpp>
 
 export module panima:animation;
 
@@ -56,11 +54,15 @@ export namespace panima {
 		float m_duration = 0.f;
 		Flags m_flags = Flags::None;
 	};
+	using namespace umath::scoped_enum::bitwise;
 };
 
 export
 {
-	REGISTER_BASIC_BITWISE_OPERATORS(panima::Animation::Flags)
+	namespace umath::scoped_enum::bitwise {
+		template<>
+		struct enable_bitwise_operators<panima::Animation::Flags> : std::true_type {};
+	}
 
 	std::ostream &operator<<(std::ostream &out, const panima::Animation &o);
 };

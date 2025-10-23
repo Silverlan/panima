@@ -8,10 +8,10 @@ module;
 #include <functional>
 #include <limits>
 #include <sharedutils/magic_enum.hpp>
-#include <udm_types.hpp>
-#include <udm_trivial_types.hpp>
 
 export module panima:types;
+
+export import pragma.udm;
 
 export namespace panima {
 	enum class PlaybackFlags : uint32_t {
