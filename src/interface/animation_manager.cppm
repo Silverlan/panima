@@ -5,6 +5,7 @@ module;
 
 #include <vector>
 #include <memory>
+#include <optional>
 #include <string>
 #include <functional>
 
