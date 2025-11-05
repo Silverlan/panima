@@ -57,8 +57,7 @@ export namespace panima {
 	using namespace umath::scoped_enum::bitwise;
 };
 
-export
-{
+export {
 	namespace umath::scoped_enum::bitwise {
 		template<>
 		struct enable_bitwise_operators<panima::Animation::Flags> : std::true_type {};

@@ -277,8 +277,7 @@ export namespace panima {
 	using namespace umath::scoped_enum::bitwise;
 };
 
-export
-{
+export {
 	namespace umath::scoped_enum::bitwise {
 		template<>
 		struct enable_bitwise_operators<panima::Channel::InsertFlags> : std::true_type {};

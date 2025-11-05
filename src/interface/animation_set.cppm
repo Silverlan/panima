@@ -47,4 +47,6 @@ export namespace panima {
 	using PAnimationSet = std::shared_ptr<AnimationSet>;
 };
 
-export { std::ostream &operator<<(std::ostream &out, const panima::AnimationSet &o); };
+export {
+	std::ostream &operator<<(std::ostream &out, const panima::AnimationSet &o);
+};
