@@ -4,9 +4,6 @@
 module;
 
 #include <memory>
-
-#include "sharedutils/magic_enum.hpp"
-#include "mathutil/glmutil.h"
 #include <exprtk.hpp>
 #include <variant>
 

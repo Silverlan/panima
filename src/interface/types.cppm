@@ -7,7 +7,6 @@ module;
 #include <iostream>
 #include <functional>
 #include <limits>
-#include <sharedutils/magic_enum.hpp>
 
 export module panima:types;
 

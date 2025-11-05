@@ -4,9 +4,6 @@
 module;
 
 #include <memory>
-
-#include "mathutil/glmutil.h"
-#include "sharedutils/magic_enum.hpp"
 #include <exprtk.hpp>
 
 module panima;
