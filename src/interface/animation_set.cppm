@@ -3,13 +3,6 @@
 
 module;
 
-#include <memory>
-#include <vector>
-#include <string>
-#include <optional>
-#include <string_view>
-#include <unordered_map>
-
 export module panima:animation_set;
 
 import :animation;

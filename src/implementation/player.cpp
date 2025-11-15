@@ -3,12 +3,6 @@
 
 module;
 
-#include <cinttypes>
-#include <memory>
-
-#include <cmath>
-#include <iostream>
-
 module panima;
 
 import :player;

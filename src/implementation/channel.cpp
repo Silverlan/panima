@@ -3,7 +3,6 @@
 
 module;
 
-#include <memory>
 #include <exprtk.hpp>
 
 module panima;

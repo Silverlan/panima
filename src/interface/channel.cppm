@@ -3,14 +3,6 @@
 
 module;
 
-#include <string>
-#include <string_view>
-#include <vector>
-#include <stdexcept>
-#include <memory>
-#include <optional>
-#include <functional>
-
 export module panima:channel;
 
 import :types;

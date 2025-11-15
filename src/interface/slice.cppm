@@ -3,9 +3,6 @@
 
 module;
 
-#include <vector>
-#include <iostream>
-
 export module panima:slice;
 
 export import pragma.udm;

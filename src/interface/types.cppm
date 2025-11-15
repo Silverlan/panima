@@ -3,11 +3,6 @@
 
 module;
 
-#include <vector>
-#include <iostream>
-#include <functional>
-#include <limits>
-
 export module panima:types;
 
 export import pragma.udm;

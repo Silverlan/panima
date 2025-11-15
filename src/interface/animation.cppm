@@ -3,11 +3,6 @@
 
 module;
 
-#include <cinttypes>
-#include <memory>
-#include <vector>
-#include <string>
-
 export module panima:animation;
 
 import :channel;

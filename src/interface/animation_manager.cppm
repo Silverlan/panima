@@ -3,12 +3,6 @@
 
 module;
 
-#include <vector>
-#include <memory>
-#include <optional>
-#include <string>
-#include <functional>
-
 export module panima:animation_manager;
 
 import :animation_set;

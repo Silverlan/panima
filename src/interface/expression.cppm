@@ -3,9 +3,6 @@
 
 module;
 
-#include <iostream>
-#include <variant>
-#include <memory>
 #include <exprtk.hpp>
 
 export module panima:expression;
