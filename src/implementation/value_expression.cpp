@@ -3,9 +3,7 @@
 
 module;
 
-#include <mathutil/color.h>
 #include <exprtk.hpp>
-#include <udm.hpp>
 
 module panima;
 

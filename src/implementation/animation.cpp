@@ -3,9 +3,6 @@
 
 module;
 
-#include <udm.hpp>
-#include <mathutil/umath.h>
-
 module panima;
 
 import :animation;

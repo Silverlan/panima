@@ -3,10 +3,6 @@
 
 module;
 
-#include <string>
-#include <memory>
-#include <optional>
-
 module panima;
 
 import :animation_set;

@@ -3,17 +3,12 @@
 
 module;
 
-#include <sharedutils/util.h>
-#include <sharedutils/magic_enum.hpp>
-#include <mathutil/perlin_noise.hpp>
-#include <udm_types.hpp>
-#include <udm_trivial_types.hpp>
-#include <udm_conversion.hpp>
 #include <exprtk.hpp>
 
 export module panima:expression;
 
 import :channel;
+export import pragma.udm;
 
 export namespace panima {
 	struct TimeFrame;
@@ -283,8 +278,7 @@ void panima::expression::ValueExpression::DoApply(double time, uint32_t timeInde
 	}
 }
 
-export
-{
+export {
 	//Fixed bug: value_expression.cpp defines all of these for common use, but no one used them, making instead their own versions.
 	extern template void panima::expression::ValueExpression::DoApply(double, uint32_t, const TimeFrame &, udm::Int8 &);
 	extern template void panima::expression::ValueExpression::DoApply(double, uint32_t, const TimeFrame &, udm::UInt8 &);

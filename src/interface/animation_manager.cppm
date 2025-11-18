@@ -3,11 +3,6 @@
 
 module;
 
-#include <sharedutils/util_string_hash.hpp>
-#include <udm.hpp>
-#include <vector>
-#include <memory>
-
 export module panima:animation_manager;
 
 import :animation_set;
@@ -101,11 +96,14 @@ export namespace panima {
 		mutable AnimationPlayerCallbackInterface m_callbackInterface {};
 	};
 	using PAnimationManager = std::shared_ptr<AnimationManager>;
+	using namespace umath::scoped_enum::bitwise;
 };
 
-export
-{
-	REGISTER_BASIC_BITWISE_OPERATORS(panima::PlaybackFlags)
+export {
+	namespace umath::scoped_enum::bitwise {
+		template<>
+		struct enable_bitwise_operators<panima::PlaybackFlags> : std::true_type {};
+	}
 
 	std::ostream &operator<<(std::ostream &out, const panima::AnimationManager &o);
 };

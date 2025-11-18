@@ -3,11 +3,6 @@
 
 module;
 
-#include <mathutil/umath.h>
-#include <udm_types.hpp>
-#include <vector>
-#include <memory>
-
 #undef GetCurrentTime
 // #define PRAGMA_ENABLE_ANIMATION_SYSTEM_2
 
@@ -67,11 +62,14 @@ export namespace panima {
 		std::vector<uint32_t> m_lastChannelTimestampIndices;
 	};
 	using PPlayer = std::shared_ptr<Player>;
+	using namespace umath::scoped_enum::bitwise;
 };
 
-export
-{
-	REGISTER_BASIC_BITWISE_OPERATORS(panima::Player::StateFlags)
+export {
+	namespace umath::scoped_enum::bitwise {
+		template<>
+		struct enable_bitwise_operators<panima::Player::StateFlags> : std::true_type {};
+	}
 
 	std::ostream &operator<<(std::ostream &out, const panima::Player &o);
 	std::ostream &operator<<(std::ostream &out, const panima::Slice &o);

@@ -3,11 +3,9 @@
 
 module;
 
-#include <vector>
-#include <iostream>
-#include <udm_types.hpp>
-
 export module panima:slice;
+
+export import pragma.udm;
 
 export namespace panima {
 	struct Slice {

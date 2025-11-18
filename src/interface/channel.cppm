@@ -3,18 +3,10 @@
 
 module;
 
-#include <sharedutils/util_path.hpp>
-#include <mathutil/umath.h>
-#include <mathutil/uvec.h>
-#include <mathutil/transform.hpp>
-#include <udm.hpp>
-#include <udm_basic_types.hpp>
-#include <udm_trivial_types.hpp>
-#include <udm_types.hpp>
-
 export module panima:channel;
 
 import :types;
+export import pragma.udm;
 
 export namespace panima {
 	template<typename T>
@@ -274,11 +266,14 @@ export namespace panima {
 		bool operator!=(const std::nullptr_t &t) const;
 		void operator()(Channel &channel, uint32_t &timestampIndex, double t);
 	};
+	using namespace umath::scoped_enum::bitwise;
 };
 
-export
-{
-	REGISTER_BASIC_BITWISE_OPERATORS(panima::Channel::InsertFlags)
+export {
+	namespace umath::scoped_enum::bitwise {
+		template<>
+		struct enable_bitwise_operators<panima::Channel::InsertFlags> : std::true_type {};
+	}
 
 	std::ostream &operator<<(std::ostream &out, const panima::Channel &o);
 	std::ostream &operator<<(std::ostream &out, const panima::TimeFrame &o);

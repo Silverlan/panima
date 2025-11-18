@@ -3,14 +3,6 @@
 
 module;
 
-#include <memory>
-#include <vector>
-#include <string>
-#include <optional>
-#include <string_view>
-#include <unordered_map>
-#include <sharedutils/util_string_hash.hpp>
-
 export module panima:animation_set;
 
 import :animation;
@@ -48,4 +40,6 @@ export namespace panima {
 	using PAnimationSet = std::shared_ptr<AnimationSet>;
 };
 
-export { std::ostream &operator<<(std::ostream &out, const panima::AnimationSet &o); };
+export {
+	std::ostream &operator<<(std::ostream &out, const panima::AnimationSet &o);
+};
