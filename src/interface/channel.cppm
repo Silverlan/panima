@@ -3,6 +3,8 @@
 
 module;
 
+#include "util_enum_flags.hpp"
+
 export module panima:channel;
 
 import :types;
@@ -270,10 +272,7 @@ export namespace panima {
 };
 
 export {
-	namespace umath::scoped_enum::bitwise {
-		template<>
-		struct enable_bitwise_operators<panima::Channel::InsertFlags> : std::true_type {};
-	}
+	REGISTER_ENUM_FLAGS(panima::Channel::InsertFlags)
 
 	std::ostream &operator<<(std::ostream &out, const panima::Channel &o);
 	std::ostream &operator<<(std::ostream &out, const panima::TimeFrame &o);

@@ -3,6 +3,8 @@
 
 module;
 
+#include "util_enum_flags.hpp"
+
 #undef GetCurrentTime
 // #define PRAGMA_ENABLE_ANIMATION_SYSTEM_2
 
@@ -66,10 +68,7 @@ export namespace panima {
 };
 
 export {
-	namespace umath::scoped_enum::bitwise {
-		template<>
-		struct enable_bitwise_operators<panima::Player::StateFlags> : std::true_type {};
-	}
+	REGISTER_ENUM_FLAGS(panima::Player::StateFlags)
 
 	std::ostream &operator<<(std::ostream &out, const panima::Player &o);
 	std::ostream &operator<<(std::ostream &out, const panima::Slice &o);

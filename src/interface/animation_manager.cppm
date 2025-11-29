@@ -3,6 +3,8 @@
 
 module;
 
+#include "util_enum_flags.hpp"
+
 export module panima:animation_manager;
 
 import :animation_set;
@@ -100,10 +102,7 @@ export namespace panima {
 };
 
 export {
-	namespace umath::scoped_enum::bitwise {
-		template<>
-		struct enable_bitwise_operators<panima::PlaybackFlags> : std::true_type {};
-	}
+	REGISTER_ENUM_FLAGS(panima::PlaybackFlags)
 
 	std::ostream &operator<<(std::ostream &out, const panima::AnimationManager &o);
 };
