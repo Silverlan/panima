@@ -72,9 +72,9 @@ void panima::Player::SetCurrentTime(float t, bool updateAnimation)
 	}
 	Advance(0.f, true);
 }
-void panima::Player::SetAnimationDirty() { umath::set_flag(m_stateFlags, StateFlags::AnimationDirty, true); }
-void panima::Player::SetLooping(bool looping) { umath::set_flag(m_stateFlags, StateFlags::Looping, looping); }
-bool panima::Player::IsLooping() const { return umath::is_flag_set(m_stateFlags, StateFlags::Looping); }
+void panima::Player::SetAnimationDirty() { pragma::math::set_flag(m_stateFlags, StateFlags::AnimationDirty, true); }
+void panima::Player::SetLooping(bool looping) { pragma::math::set_flag(m_stateFlags, StateFlags::Looping, looping); }
+bool panima::Player::IsLooping() const { return pragma::math::is_flag_set(m_stateFlags, StateFlags::Looping); }
 bool panima::Player::Advance(float dt, bool forceUpdate)
 {
 	if(!m_animation)
@@ -85,20 +85,20 @@ bool panima::Player::Advance(float dt, bool forceUpdate)
 	newTime += dt;
 	auto dur = anim->GetDuration();
 	if(newTime > dur) {
-		if(umath::is_flag_set(m_stateFlags, StateFlags::Looping) && dur > 0.f) {
+		if(pragma::math::is_flag_set(m_stateFlags, StateFlags::Looping) && dur > 0.f) {
 			auto d = fmodf(newTime, dur);
 			newTime = d;
 		}
 		// else
 		// 	newTime = dur;
 	}
-	if(newTime == m_currentTime && !forceUpdate && !umath::is_flag_set(m_stateFlags, StateFlags::AnimationDirty))
+	if(newTime == m_currentTime && !forceUpdate && !pragma::math::is_flag_set(m_stateFlags, StateFlags::AnimationDirty))
 		return false;
-	umath::set_flag(m_stateFlags, StateFlags::AnimationDirty, false);
+	pragma::math::set_flag(m_stateFlags, StateFlags::AnimationDirty, false);
 	m_currentTime = newTime;
 	return true;
 	/*auto &channels = anim->GetChannels();
-	auto numChannels = umath::min(channels.size(),m_currentSlice.channelValues.size());
+	auto numChannels = pragma::math::min(channels.size(),m_currentSlice.channelValues.size());
 	auto vs = [this,newTime](auto tag,pragma::animation::AnimationChannel &channel,udm::Property &sliceData,uint32_t &inOutPivotTimeIndex) {
 		using T = decltype(tag)::type;
 		if constexpr(

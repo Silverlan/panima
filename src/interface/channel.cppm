@@ -30,7 +30,7 @@ export namespace panima {
 
 		std::vector<std::string> *GetComponents() { return m_components.get(); }
 		const std::vector<std::string> *GetComponents() const { return const_cast<ChannelPath *>(this)->GetComponents(); }
-		util::Path path;
+		pragma::util::Path path;
 
 		operator std::string() const { return ToUri(); }
 		std::string ToUri(bool includeScheme = true) const;
@@ -128,7 +128,7 @@ export namespace panima {
 
 		std::pair<uint32_t, uint32_t> FindInterpolationIndices(float t, float &outInterpFactor, uint32_t pivotIndex) const;
 		std::pair<uint32_t, uint32_t> FindInterpolationIndices(float t, float &outInterpFactor) const;
-		std::optional<size_t> FindValueIndex(float time, float epsilon = panima::Channel::TIME_EPSILON) const;
+		std::optional<size_t> FindValueIndex(float time, float epsilon = TIME_EPSILON) const;
 		template<typename T>
 		bool IsValueType() const;
 		template<typename T>
@@ -169,7 +169,7 @@ export namespace panima {
 
 		void ResolveDuplicates(float t);
 
-		void TransformGlobal(const umath::ScaledTransform &transform);
+		void TransformGlobal(const pragma::math::ScaledTransform &transform);
 
 		// Note: It is the caller's responsibility to ensure that the type matches the channel type
 		template<typename T>
@@ -268,7 +268,7 @@ export namespace panima {
 		bool operator!=(const std::nullptr_t &t) const;
 		void operator()(Channel &channel, uint32_t &timestampIndex, double t);
 	};
-	using namespace umath::scoped_enum::bitwise;
+	using namespace pragma::math::scoped_enum::bitwise;
 };
 
 export {

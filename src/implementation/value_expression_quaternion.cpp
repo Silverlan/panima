@@ -228,7 +228,7 @@ namespace panima::expression {
 
 	exprtk::symbol_table<ExprScalar> &get_quaternion_symbol_table()
 	{
-		static exprtk::symbol_table<panima::expression::ExprScalar> symTable;
+		static exprtk::symbol_table<ExprScalar> symTable;
 		static auto initialized = false;
 		if(initialized)
 			return symTable;

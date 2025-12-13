@@ -36,7 +36,7 @@ export namespace panima {
 		const std::string &GetName() const { return m_name; }
 
 		Flags GetFlags() const { return m_flags; }
-		bool HasFlags(Flags flags) const { return umath::is_flag_set(m_flags, flags); }
+		bool HasFlags(Flags flags) const { return pragma::math::is_flag_set(m_flags, flags); }
 
 		float GetDuration() const { return m_duration; }
 		void SetDuration(float duration) { m_duration = duration; }
@@ -51,7 +51,7 @@ export namespace panima {
 		float m_duration = 0.f;
 		Flags m_flags = Flags::None;
 	};
-	using namespace umath::scoped_enum::bitwise;
+	using namespace pragma::math::scoped_enum::bitwise;
 };
 
 export {

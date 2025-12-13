@@ -64,7 +64,7 @@ export namespace panima {
 		std::vector<uint32_t> m_lastChannelTimestampIndices;
 	};
 	using PPlayer = std::shared_ptr<Player>;
-	using namespace umath::scoped_enum::bitwise;
+	using namespace pragma::math::scoped_enum::bitwise;
 };
 
 export {

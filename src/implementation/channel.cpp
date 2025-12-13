@@ -30,19 +30,19 @@ panima::ChannelPath::ChannelPath(const std::string &ppath)
 	auto strPath = uri.path();
 	if(!strPath.empty() && strPath.front() == '/')
 		strPath.erase(strPath.begin());
-	ustring::replace(strPath, "%20", " ");
+	pragma::string::replace(strPath, "%20", " ");
 	path = std::move(uriparser::unescape(strPath));
 	auto strQueries = uri.query();
 	std::vector<std::string> queries;
-	ustring::explode(strQueries, "&", queries);
+	pragma::string::explode(strQueries, "&", queries);
 	for(auto &queryParam : queries) {
 		std::vector<std::string> query;
-		ustring::explode(queryParam, "=", query);
+		pragma::string::explode(queryParam, "=", query);
 		if(query.size() < 2)
 			continue;
 		if(query.front() == "components") {
 			m_components = std::make_unique<std::vector<std::string>>();
-			ustring::explode(query[1], ",", *m_components);
+			pragma::string::explode(query[1], ",", *m_components);
 			for(auto &str : *m_components)
 				str = uriparser::unescape(str);
 		}
@@ -341,8 +341,8 @@ bool panima::Channel::ClearRange(float startTime, float endTime, bool addCaps)
 	auto maxTime = *GetTime(GetTimeCount() - 1);
 	if(endTime < startTime || (startTime < minTime - TIME_EPSILON && endTime < minTime - TIME_EPSILON) || (startTime > maxTime + TIME_EPSILON && endTime > maxTime + TIME_EPSILON))
 		return false;
-	startTime = umath::clamp(startTime, minTime, maxTime);
-	endTime = umath::clamp(endTime, minTime, maxTime);
+	startTime = pragma::math::clamp(startTime, minTime, maxTime);
+	endTime = pragma::math::clamp(endTime, minTime, maxTime);
 	float t;
 	auto indicesStart = FindInterpolationIndices(startTime, t);
 	auto startIdx = (t < TIME_EPSILON) ? indicesStart.first : indicesStart.second;
@@ -410,7 +410,7 @@ void panima::Channel::MergeDataArrays(uint32_t n0, const float *times0, const ui
 	while(idx0 < n0 || idx1 < n1) {
 		if(idx0 < n0) {
 			if(idx1 >= n1 || times0[idx0] < times1[idx1]) {
-				if(outIdx == 0 || umath::abs(times0[idx0] - times[outIdx - 1]) > TIME_EPSILON) {
+				if(outIdx == 0 || pragma::math::abs(times0[idx0] - times[outIdx - 1]) > TIME_EPSILON) {
 					times[outIdx] = times0[idx0];
 					memcpy(values + outIdx * valueStride, values0 + idx0 * valueStride, valueStride);
 					++outIdx;
@@ -421,7 +421,7 @@ void panima::Channel::MergeDataArrays(uint32_t n0, const float *times0, const ui
 		}
 
 		assert(idx1 < n1);
-		if(outIdx == 0 || umath::abs(times1[idx1] - times[outIdx - 1]) > TIME_EPSILON) {
+		if(outIdx == 0 || pragma::math::abs(times1[idx1] - times[outIdx - 1]) > TIME_EPSILON) {
 			times[outIdx] = times1[idx1];
 			memcpy(values + outIdx * valueStride, values1 + idx1 * valueStride, valueStride);
 			++outIdx;
@@ -466,7 +466,7 @@ void panima::Channel::GetDataInRange(float tStart, float tEnd, std::vector<float
 				auto &value1 = GetValue<T>(indices.second);
 				auto result = make_value<T>();
 				udm::lerp_value(value0, value1, f, result, udm::type_to_enum<T>());
-				return std::pair<float, T> {umath::lerp(time0, time1, f), result};
+				return std::pair<float, T> {pragma::math::lerp(time0, time1, f), result};
 			}
 			return {};
 		};
@@ -542,7 +542,7 @@ std::optional<uint32_t> panima::Channel::InsertSample(float t)
 		return {};
 	});
 }
-void panima::Channel::TransformGlobal(const umath::ScaledTransform &transform)
+void panima::Channel::TransformGlobal(const pragma::math::ScaledTransform &transform)
 {
 	auto valueType = GetValueType();
 	auto numTimes = GetTimeCount();
@@ -588,14 +588,14 @@ void panima::Channel::ResolveDuplicates(float t)
 		auto numTimes = GetTimeCount();
 		if(*idx > 0) {
 			auto tPrev = *GetTime(*idx - 1);
-			if(umath::abs(t - tPrev) <= TIME_EPSILON) {
+			if(pragma::math::abs(t - tPrev) <= TIME_EPSILON) {
 				RemoveValueAtIndex(*idx - 1);
 				continue;
 			}
 		}
 		if(numTimes > 1 && *idx < numTimes - 1) {
 			auto tNext = *GetTime(*idx + 1);
-			if(umath::abs(t - tNext) <= TIME_EPSILON) {
+			if(pragma::math::abs(t - tNext) <= TIME_EPSILON) {
 				RemoveValueAtIndex(*idx + 1);
 				continue;
 			}
@@ -617,7 +617,7 @@ std::pair<std::optional<uint32_t>, std::optional<uint32_t>> panima::Channel::Get
 		if(indicesEnd.first == std::numeric_limits<decltype(indicesEnd.first)>::max())
 			return {};
 		f *= (*GetTime(indicesEnd.second) - *GetTime(indicesEnd.first));
-		auto endIdx = (umath::abs(f - *GetTime(indicesEnd.second)) < TIME_EPSILON) ? indicesEnd.second : indicesEnd.first;
+		auto endIdx = (pragma::math::abs(f - *GetTime(indicesEnd.second)) < TIME_EPSILON) ? indicesEnd.second : indicesEnd.first;
 		auto tStartTs = *GetTime(startIdx);
 		auto tEndTs = *GetTime(endIdx);
 		auto tMin = tStart - TIME_EPSILON;
@@ -643,7 +643,7 @@ std::pair<std::optional<uint32_t>, std::optional<uint32_t>> panima::Channel::Get
 }
 void panima::Channel::ShiftTimeInRange(float tStart, float tEnd, float shiftAmount, bool retainBoundaryValues)
 {
-	if(umath::abs(shiftAmount) <= TIME_EPSILON * 1.5f)
+	if(pragma::math::abs(shiftAmount) <= TIME_EPSILON * 1.5f)
 		return;
 	auto [idxStart, idxEnd] = GetBoundaryIndices(tStart, tEnd, retainBoundaryValues);
 	if(!idxStart || !idxEnd)
@@ -825,7 +825,7 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 			timesWithOffset[i] = times[i] + offset;
 		return InsertValues(n, timesWithOffset.data(), values, valueStride, 0.f);
 	}
-	if(umath::is_flag_set(flags, InsertFlags::ClearExistingDataInRange) == false) {
+	if(pragma::math::is_flag_set(flags, InsertFlags::ClearExistingDataInRange) == false) {
 		auto tStart = times[0];
 		auto tEnd = times[n - 1];
 		return udm::visit_ng(GetValueType(), [this, tStart, tEnd, n, times, values, valueStride, offset, flags](auto tag) {
@@ -846,7 +846,7 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 			  sizeof(TValue));
 
 			auto newFlags = flags;
-			umath::set_flag(newFlags, InsertFlags::ClearExistingDataInRange);
+			pragma::math::set_flag(newFlags, InsertFlags::ClearExistingDataInRange);
 			return InsertValues(mergedTimes.size(), mergedTimes.data(), mergedValues.data(), valueStride, offset, newFlags);
 		});
 	}
@@ -883,7 +883,7 @@ uint32_t panima::Channel::InsertValues(uint32_t n, const float *times, const voi
 		pValues += valueStride;
 	}
 
-	if(umath::is_flag_set(flags, InsertFlags::DecimateInsertedData))
+	if(pragma::math::is_flag_set(flags, InsertFlags::DecimateInsertedData))
 		Decimate(startTime, endTime);
 	return startIndex;
 }
@@ -899,14 +899,14 @@ uint32_t panima::Channel::AddValue(float t, const void *value)
 		GetValueArray()[idx] = value;
 		return idx;
 	}
-	if(umath::abs(t - *GetTime(indices.first)) < VALUE_EPSILON) {
+	if(pragma::math::abs(t - *GetTime(indices.first)) < VALUE_EPSILON) {
 		// Replace value at first index with new value
 		auto idx = indices.first;
 		GetTimesArray()[idx] = t;
 		GetValueArray()[idx] = value;
 		return idx;
 	}
-	if(umath::abs(t - *GetTime(indices.second)) < VALUE_EPSILON) {
+	if(pragma::math::abs(t - *GetTime(indices.second)) < VALUE_EPSILON) {
 		// Replace value at second index with new value
 		auto idx = indices.second;
 		GetTimesArray()[idx] = t;
@@ -977,7 +977,7 @@ bool panima::Channel::Validate() const
 		auto t1 = times[i];
 		if(t0 >= t1) {
 			throw std::runtime_error {"Time values are not in order!"};
-			const_cast<panima::Channel *>(this)->ResolveDuplicates(t0);
+			const_cast<Channel *>(this)->ResolveDuplicates(t0);
 			return false;
 		}
 		auto diff = t1 - t0;
@@ -992,7 +992,7 @@ void panima::Channel::TimeToLocalTimeFrame(float &inOutT) const
 {
 	inOutT -= m_timeFrame.startOffset;
 	if(m_timeFrame.duration >= 0.f)
-		inOutT = umath::min(inOutT, m_timeFrame.duration);
+		inOutT = pragma::math::min(inOutT, m_timeFrame.duration);
 	inOutT *= m_timeFrame.scale;
 }
 std::pair<uint32_t, uint32_t> panima::Channel::FindInterpolationIndices(float t, float &interpFactor, uint32_t pivotIndex, uint32_t recursionDepth) const
@@ -1063,9 +1063,9 @@ std::optional<size_t> panima::Channel::FindValueIndex(float time, float epsilon)
 	if(indices.first == std::numeric_limits<decltype(indices.first)>::max())
 		return {};
 	if(interpFactor == 0.f && indices.first == indices.second) {
-		if(indices.first == 0 && umath::abs(t.GetValue<float>(0) - time) >= epsilon)
+		if(indices.first == 0 && pragma::math::abs(t.GetValue<float>(0) - time) >= epsilon)
 			return {};
-		if(indices.first == size - 1 && umath::abs(t.GetValue<float>(size - 1) - time) >= epsilon)
+		if(indices.first == size - 1 && pragma::math::abs(t.GetValue<float>(size - 1) - time) >= epsilon)
 			return {};
 	}
 	interpFactor *= (*GetTime(indices.second) - *GetTime(indices.first));

@@ -21,9 +21,9 @@ panima::expression::ExprScalar panima::expression::ExprFuncValueAtArithmetic<T>:
 }
 
 template<typename T>
-panima::expression::ExprScalar panima::expression::ExprFuncValueAtVector<T>::operator()(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters)
+panima::expression::ExprScalar panima::expression::ExprFuncValueAtVector<T>::operator()(parameter_list_t parameters)
 {
-	using generic_type = exprtk::igeneric_function<ExprScalar>::generic_type;
+	using generic_type = generic_type;
 	assert(parameters.size() == 2);
 	typename generic_type::scalar_view t {parameters[0]};
 	typename generic_type::vector_view out {parameters[1]};
@@ -57,10 +57,10 @@ static panima::expression::ExprScalar rescale(const panima::expression::ExprScal
 
 namespace panima::expression {
 	static ExprScalar sqr(const ExprScalar &v) { return v * v; }
-	static ExprScalar cramp(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3) { return umath::clamp(ramp(v1, v2, v3), ExprScalar {0}, ExprScalar {1}); }
-	static ExprScalar clerp(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3) { return umath::clamp(expr_lerp(v1, v2, v3), v2, v3); }
+	static ExprScalar cramp(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3) { return pragma::math::clamp(ramp(v1, v2, v3), ExprScalar {0}, ExprScalar {1}); }
+	static ExprScalar clerp(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3) { return pragma::math::clamp(expr_lerp(v1, v2, v3), v2, v3); }
 	static ExprScalar elerp(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3) { return ramp(3 * v1 * v1 - 2 * v1 * v1 * v1, v2, v3); }
-	static ExprScalar crescale(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3, const ExprScalar &v4, const ExprScalar &v5) { return umath::clamp(rescale(v1, v2, v3, v4, v5), v4, v5); }
+	static ExprScalar crescale(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3, const ExprScalar &v4, const ExprScalar &v5) { return pragma::math::clamp(rescale(v1, v2, v3, v4, v5), v4, v5); }
 
 	static ExprScalar hsv_to_rgb(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters)
 	{
@@ -68,7 +68,7 @@ namespace panima::expression {
 		typename generic_type::vector_view hsv {parameters[0]};
 		typename generic_type::vector_view out {parameters[1]};
 
-		auto rgb = util::hsv_to_rgb(hsv[0], hsv[1], hsv[2]);
+		auto rgb = pragma::math::hsv_to_rgb(hsv[0], hsv[1], hsv[2]);
 		*reinterpret_cast<::Vector3 *>(&out[0]) = rgb;
 		return ExprScalar {};
 	}
@@ -79,7 +79,7 @@ namespace panima::expression {
 		typename generic_type::vector_view out {parameters[1]};
 
 		double h, s, v;
-		util::rgb_to_hsv(::Vector3 {rgb[0], rgb[1], rgb[2]}, h, s, v);
+		pragma::math::rgb_to_hsv(::Vector3 {rgb[0], rgb[1], rgb[2]}, h, s, v);
 		*reinterpret_cast<::Vector3 *>(&out[0]) = ::Vector3 {static_cast<float>(h), static_cast<float>(s), static_cast<float>(v)};
 		return ExprScalar {};
 	}
@@ -87,7 +87,7 @@ namespace panima::expression {
 	extern exprtk::symbol_table<ExprScalar> &get_quaternion_symbol_table();
 	static exprtk::symbol_table<ExprScalar> &get_base_symbol_table()
 	{
-		static exprtk::symbol_table<panima::expression::ExprScalar> symTable;
+		static exprtk::symbol_table<ExprScalar> symTable;
 		static auto initialized = false;
 		if(initialized)
 			return symTable;

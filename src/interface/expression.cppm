@@ -74,13 +74,13 @@ export namespace panima {
 			inline T operator()(const T &v0, const T &v1, const T &v2, const T &v3, const T &v4) { return TEval(v0, v1, v2, v3, v4); }
 		};
 		struct ExprFuncPerlinNoise : public exprtk::ifunction<ExprScalar> {
-			using exprtk::ifunction<ExprScalar>::operator();
+			using ifunction<ExprScalar>::operator();
 
-			ExprFuncPerlinNoise() : exprtk::ifunction<ExprScalar>(3) {}
+			ExprFuncPerlinNoise() : ifunction<ExprScalar>(3) {}
 
 			ExprScalar operator()(const ExprScalar &v1, const ExprScalar &v2, const ExprScalar &v3) override;
 		  private:
-			umath::PerlinNoise m_noise {static_cast<uint32_t>(umath::random(std::numeric_limits<int>::lowest(), std::numeric_limits<int>::max()))};
+			pragma::math::PerlinNoise m_noise {static_cast<uint32_t>(pragma::math::random(std::numeric_limits<int>::lowest(), std::numeric_limits<int>::max()))};
 		};
 		struct BaseExprFuncValueAt {
 			BaseExprFuncValueAt() = default;
@@ -92,21 +92,21 @@ export namespace panima {
 		};
 		template<typename T>
 		struct ExprFuncValueAtArithmetic : public BaseExprFuncValueAt, public exprtk::ifunction<ExprScalar> {
-			using exprtk::ifunction<ExprScalar>::operator();
+			using ifunction<ExprScalar>::operator();
 
-			ExprFuncValueAtArithmetic() : exprtk::ifunction<ExprScalar>(1) {}
+			ExprFuncValueAtArithmetic() : ifunction<ExprScalar>(1) {}
 			~ExprFuncValueAtArithmetic() {}
 
 			ExprScalar operator()(const ExprScalar &v) override;
 		};
 		template<typename T>
 		struct ExprFuncValueAtVector : public BaseExprFuncValueAt, public exprtk::igeneric_function<ExprScalar> {
-			using exprtk::igeneric_function<ExprScalar>::operator();
+			using igeneric_function<ExprScalar>::operator();
 
-			ExprFuncValueAtVector() : exprtk::igeneric_function<ExprScalar> {} {}
+			ExprFuncValueAtVector() : igeneric_function<ExprScalar> {} {}
 			~ExprFuncValueAtVector() {}
 
-			ExprScalar operator()(exprtk::igeneric_function<ExprScalar>::parameter_list_t parameters) override;
+			ExprScalar operator()(parameter_list_t parameters) override;
 		};
 
 		template<typename T, T (*TEval)(typename exprtk::igeneric_function<T>::parameter_list_t)>
