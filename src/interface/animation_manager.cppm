@@ -86,7 +86,7 @@ export namespace panima {
 		int32_t m_priority = 0;
 
 		std::vector<PAnimationSet> m_animationSets;
-		pragma::util::StringMap<AnimationSetIndex> m_setNameToIndex;
+		pragma::string::StringMap<AnimationSetIndex> m_setNameToIndex;
 
 		std::weak_ptr<AnimationSet> m_currentAnimationSet {};
 		AnimationId m_currentAnimation = std::numeric_limits<AnimationId>::max();
