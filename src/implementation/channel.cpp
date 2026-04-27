@@ -896,21 +896,30 @@ uint32_t panima::Channel::AddValue(float t, const void *value)
 		Resize(size);
 		auto idx = size - 1;
 		GetTimesArray()[idx] = t;
-		GetValueArray()[idx] = value;
+		udm::visit_ng(GetValueType(), [this, idx, value](auto tag) {
+			using T = typename decltype(tag)::type;
+			GetValueArray()[idx] = *static_cast<const T *>(value);
+		});
 		return idx;
 	}
 	if(pragma::math::abs(t - *GetTime(indices.first)) < VALUE_EPSILON) {
 		// Replace value at first index with new value
 		auto idx = indices.first;
 		GetTimesArray()[idx] = t;
-		GetValueArray()[idx] = value;
+		udm::visit_ng(GetValueType(), [this, idx, value](auto tag) {
+			using T = typename decltype(tag)::type;
+			GetValueArray()[idx] = *static_cast<const T *>(value);
+		});
 		return idx;
 	}
 	if(pragma::math::abs(t - *GetTime(indices.second)) < VALUE_EPSILON) {
 		// Replace value at second index with new value
 		auto idx = indices.second;
 		GetTimesArray()[idx] = t;
-		GetValueArray()[idx] = value;
+		udm::visit_ng(GetValueType(), [this, idx, value](auto tag) {
+			using T = typename decltype(tag)::type;
+			GetValueArray()[idx] = *static_cast<const T *>(value);
+		});
 		return idx;
 	}
 	auto &times = GetTimesArray();
